@@ -1,20 +1,57 @@
-import { Db } from 'mongodb';
-import { connectToDatabase } from '../../db/mongo';
+import { prisma } from '../../prisma';
+
+interface BalanceSheetItemPayload {
+    name: string;
+    group: string;
+    type: string;
+    value: number;
+}
 
 export class BalanceSheetService {
-    private db: Db | undefined;
-
-    private async getDb() {
-        if (!this.db) {
-            this.db = await connectToDatabase();
-        }
-        return this.db;
+    async getCurrentBalanceSheet() {
+        const [assets, liabilities, equity] = await Promise.all([
+            prisma.balanceSheetItem.findMany({ where: { type: 'asset' }, orderBy: { group: 'asc' } }),
+            prisma.balanceSheetItem.findMany({ where: { type: 'liability' }, orderBy: { group: 'asc' } }),
+            prisma.balanceSheetItem.findMany({ where: { type: 'equity' }, orderBy: { group: 'asc' } }),
+        ]);
+        return { assets, liabilities, equity };
     }
 
-    async getCurrentBalanceSheet() {
-        const db = await this.getDb();
-        const assets = await db.collection('balanceSheet').find({ type: 'asset' }).toArray();
-        const liabilities = await db.collection('balanceSheet').find({ type: 'liability' }).toArray();
-        return { assets, liabilities };
+    async addItem(item: BalanceSheetItemPayload) {
+        return prisma.balanceSheetItem.create({
+            data: {
+                name: item.name,
+                group: item.group,
+                type: item.type,
+                value: Number(item.value || 0),
+            },
+        });
+    }
+
+    async updateItem(id: string, item: Partial<BalanceSheetItemPayload>) {
+        return prisma.balanceSheetItem.update({
+            where: { id },
+            data: {
+                ...(item.name !== undefined ? { name: item.name } : {}),
+                ...(item.group !== undefined ? { group: item.group } : {}),
+                ...(item.type !== undefined ? { type: item.type } : {}),
+                ...(item.value !== undefined ? { value: Number(item.value) } : {}),
+            },
+        });
+    }
+
+    async deleteItem(id: string) {
+        await prisma.balanceSheetItem.delete({ where: { id } });
+        return { id };
+    }
+
+    async syncItems(items: BalanceSheetItemPayload[]) {
+        const results = [];
+
+        for (const item of items) {
+            results.push(await this.addItem(item));
+        }
+
+        return results;
     }
 }

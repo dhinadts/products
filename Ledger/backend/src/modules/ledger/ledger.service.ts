@@ -1,28 +1,74 @@
-import { Db } from 'mongodb';
-import { connectToDatabase } from '../../db/mongo';
+import { prisma } from '../../prisma';
+
+interface LedgerEntryPayload {
+    date: string;
+    particulars: string;
+    ledgerRef: string;
+    debit: number;
+    credit: number;
+    status?: string;
+    tags?: string[];
+    createdBy?: string;
+}
 
 export class LedgerService {
-    private db: Db | undefined;
-
-    private async getDb() {
-        if (!this.db) {
-            this.db = await connectToDatabase();
-        }
-        return this.db;
-    }
-
     async listEntries() {
-        const db = await this.getDb();
-        return db.collection('ledgerEntries').find().toArray();
+        return prisma.ledgerEntry.findMany({
+            orderBy: { date: 'desc' },
+        });
     }
 
-    async createEntry(entry: any) {
-        const db = await this.getDb();
-        // validate debit/credit and amount
-        return db.collection('ledgerEntries').insertOne({
-            ...entry,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+    async createEntry(entry: LedgerEntryPayload) {
+        if (entry.debit > 0 && entry.credit > 0) {
+            throw new Error('Ledger entry cannot have both debit and credit amounts');
+        }
+
+        return prisma.ledgerEntry.create({
+            data: {
+                date: new Date(entry.date),
+                particulars: entry.particulars,
+                ledgerRef: entry.ledgerRef,
+                debit: Number(entry.debit || 0),
+                credit: Number(entry.credit || 0),
+                status: entry.status || 'PENDING',
+                tags: entry.tags || [],
+                createdBy: entry.createdBy || 'system',
+            },
         });
+    }
+
+    async updateEntry(id: string, entry: Partial<LedgerEntryPayload>) {
+        if ((entry.debit ?? 0) > 0 && (entry.credit ?? 0) > 0) {
+            throw new Error('Ledger entry cannot have both debit and credit amounts');
+        }
+
+        return prisma.ledgerEntry.update({
+            where: { id },
+            data: {
+                ...(entry.date ? { date: new Date(entry.date) } : {}),
+                ...(entry.particulars !== undefined ? { particulars: entry.particulars } : {}),
+                ...(entry.ledgerRef !== undefined ? { ledgerRef: entry.ledgerRef } : {}),
+                ...(entry.debit !== undefined ? { debit: Number(entry.debit) } : {}),
+                ...(entry.credit !== undefined ? { credit: Number(entry.credit) } : {}),
+                ...(entry.status !== undefined ? { status: entry.status } : {}),
+                ...(entry.tags !== undefined ? { tags: entry.tags } : {}),
+                ...(entry.createdBy !== undefined ? { createdBy: entry.createdBy } : {}),
+            },
+        });
+    }
+
+    async deleteEntry(id: string) {
+        await prisma.ledgerEntry.delete({ where: { id } });
+        return { id };
+    }
+
+    async syncEntries(entries: LedgerEntryPayload[]) {
+        const results = [];
+
+        for (const entry of entries) {
+            results.push(await this.createEntry(entry));
+        }
+
+        return results;
     }
 }

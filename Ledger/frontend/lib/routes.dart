@@ -1,9 +1,12 @@
 import 'package:go_router/go_router.dart';
+import 'pages/login_screen.dart';
 import 'pages/screens.dart';
 
 final GoRouter appRouter = GoRouter(
   routes: [
-    GoRoute(path: '/', builder: (context, state) => const DashboardScreen()),
+    GoRoute(path: '/', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/signup', builder: (context, state) => const SignUpScreen()),
     GoRoute(
       path: '/dashboard',
       builder: (context, state) => const DashboardScreen(),

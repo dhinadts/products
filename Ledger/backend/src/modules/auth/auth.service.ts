@@ -1,8 +1,7 @@
-import { Db } from 'mongodb';
-import { connectToDatabase } from '../../db/mongo';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { config } from '../../config';
+import { prisma } from '../../prisma';
 
 interface RegisterPayload {
     name: string;
@@ -17,37 +16,32 @@ interface LoginPayload {
 }
 
 export class AuthService {
-    private db: Db | undefined;
-
-    private async getDb() {
-        if (!this.db) {
-            this.db = await connectToDatabase();
-        }
-        return this.db;
-    }
-
     async register(payload: RegisterPayload) {
-        const db = await this.getDb();
-        const existing = await db.collection('users').findOne({ email: payload.email });
+        const existing = await prisma.user.findUnique({ where: { email: payload.email } });
         if (existing) {
             throw new Error('Email already registered');
         }
         const passwordHash = await bcrypt.hash(payload.password, 12);
-        const result = await db.collection('users').insertOne({
-            name: payload.name,
-            email: payload.email,
-            passwordHash,
-            role: payload.role,
-            refreshTokens: [],
-            createdAt: new Date(),
-            updatedAt: new Date(),
+        const user = await prisma.user.create({
+            data: {
+                name: payload.name,
+                email: payload.email,
+                passwordHash,
+                role: payload.role || 'user',
+                refreshTokens: [],
+            },
         });
-        return { userId: result.insertedId };
+        const token = this.createToken(user.id, user.role);
+        const refreshToken = this.createRefreshToken(user.id, user.role);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { refreshTokens: { push: refreshToken } },
+        });
+        return { token, refreshToken, user: this.publicUser(user) };
     }
 
     async login(payload: LoginPayload) {
-        const db = await this.getDb();
-        const user = await db.collection('users').findOne({ email: payload.email });
+        const user = await prisma.user.findUnique({ where: { email: payload.email } });
         if (!user) {
             throw new Error('Invalid credentials');
         }
@@ -55,20 +49,41 @@ export class AuthService {
         if (!valid) {
             throw new Error('Invalid credentials');
         }
-        const token = jwt.sign({ userId: user._id, role: user.role }, config.jwtSecret, { expiresIn: '15m' });
-        const refreshToken = jwt.sign({ userId: user._id, role: user.role }, config.jwtRefreshSecret, { expiresIn: '30d' });
-        await db.collection('users').updateOne({ _id: user._id }, { $push: { refreshTokens: refreshToken } });
-        return { token, refreshToken };
+        const token = this.createToken(user.id, user.role);
+        const refreshToken = this.createRefreshToken(user.id, user.role);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { refreshTokens: { push: refreshToken } },
+        });
+        return { token, refreshToken, user: this.publicUser(user) };
     }
 
     async refreshToken(payload: { refreshToken: string }) {
-        const db = await this.getDb();
-        const decoded = jwt.verify(payload.refreshToken, config.jwtRefreshSecret) as any;
-        const user = await db.collection('users').findOne({ _id: decoded.userId, refreshTokens: payload.refreshToken });
-        if (!user) {
+        const decoded = jwt.verify(payload.refreshToken, config.jwtRefreshSecret) as { userId: string; role: string };
+        const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+        if (!user || !user.refreshTokens.includes(payload.refreshToken)) {
             throw new Error('Invalid refresh token');
         }
-        const token = jwt.sign({ userId: user._id, role: user.role }, config.jwtSecret, { expiresIn: '15m' });
-        return { token };
+        const token = this.createToken(user.id, user.role);
+        return { token, refreshToken: payload.refreshToken, user: this.publicUser(user) };
+    }
+
+    private createToken(userId: string, role: string) {
+        return jwt.sign({ userId, role }, config.jwtSecret, { expiresIn: '15m' });
+    }
+
+    private createRefreshToken(userId: string, role: string) {
+        return jwt.sign({ userId, role }, config.jwtRefreshSecret, { expiresIn: '30d' });
+    }
+
+    private publicUser(user: { id: string; name: string; email: string; role: string; createdAt: Date; updatedAt: Date }) {
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        };
     }
 }

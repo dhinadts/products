@@ -1,9 +1,19 @@
 import dotenv from 'dotenv';
-import { app } from './app';
+import { createApp } from './app';
 import { config } from './config';
 
 dotenv.config();
 
 const port = Number(config.port);
-console.log(`Balance Sheet Ledger backend running on port ${port}`);
-});
+
+createApp()
+    .then((app) => {
+        app.listen(port, () => {
+            console.log(`Balance Sheet Ledger backend running on port ${port}`);
+            console.log('GraphQL endpoint available at /graphql');
+        });
+    })
+    .catch((error) => {
+        console.error('Failed to start backend', error);
+        process.exit(1);
+    });
