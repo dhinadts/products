@@ -21,9 +21,9 @@ class BackendApi {
       return fromDefine;
     }
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:4000';
+      return 'https://ledger-06q7.onrender.com';
     }
-    return 'http://localhost:4000';
+    return 'https://ledger-06q7.onrender.com';
   }
 
   Future<AuthResult> register({
