@@ -1,0 +1,39 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/dist
+
+# Flutter
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-versions
+.packages
+.pub-cache
+/build
+/.dart_tool
+
+# Misc
+.DS_Store
+*.iml
+.env
+*.log
+
+backend/src/.env
+backend/.env
+backend/.env.example
+backend/build
+backend/node_modules
+backend/package-lock.json
+backend/dist
+
+frontend/.env
+frontend/.dart_tool
+frontend/build
+frontend/.idea
+frontend/package-lock.json
+frontend/.env.example
+
+.env
+.env.example
