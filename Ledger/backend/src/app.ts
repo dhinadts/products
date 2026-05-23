@@ -11,20 +11,40 @@ import { errorHandler } from './middleware/error-handler';
 import { createContext } from './graphql/context';
 import { typeDefs } from './graphql/typeDefs';
 import { resolvers } from './graphql/resolvers';
+import { prisma } from './prisma';
+
+const allowedProductionOrigins = new Set([
+    'https://dhinadts.github.io',
+    'https://dhinadts.github.io/products',
+    'https://dhinadts.github.io/products/',
+]);
+
+function isAllowedOrigin(origin?: string) {
+    if (!origin) {
+        return true;
+    }
+
+    if (allowedProductionOrigins.has(origin)) {
+        return true;
+    }
+
+    try {
+        const { hostname, protocol } = new URL(origin);
+        return protocol === 'http:' && (hostname === 'localhost' || hostname === '127.0.0.1');
+    } catch {
+        return false;
+    }
+}
 
 export async function createApp() {
     const app = express() as express.Application;
 
+    await prisma.$connect();
+
     app.use(cors({
-        origin: [
-            'http://localhost:49663',
-            'http://localhost:57186',
-            "http://localhost:3000",
-            "http://localhost:5173",
-            'https://dhinadts.github.io',
-            'https://dhinadts.github.io/products',
-            'https://dhinadts.github.io/products/',
-        ],
+        origin(origin, callback) {
+            callback(null, isAllowedOrigin(origin));
+        },
         credentials: true,
     }));
     app.use(express.json());
