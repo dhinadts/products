@@ -24,6 +24,7 @@ class BackendApi {
       return 'https://ledger-06q7.onrender.com';
     }
     return 'https://ledger-06q7.onrender.com';
+// return     'https://ledger-06q7.onrender.com';
   }
 
   Future<AuthResult> register({
@@ -200,7 +201,7 @@ class BackendApi {
     try {
       response = await _client
           .get(uri, headers: _headers())
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 30));
     } on TimeoutException {
       throw BackendApiException(_connectionErrorMessage);
     } on http.ClientException {

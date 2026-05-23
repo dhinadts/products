@@ -1,4 +1,4 @@
-package com.example.balance_sheet_ledger
+package com.dhinadts.ledger
 
 import io.flutter.embedding.android.FlutterActivity
 
