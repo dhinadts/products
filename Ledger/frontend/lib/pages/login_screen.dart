@@ -280,28 +280,48 @@ class _AuthScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).colorScheme.primary;
-    final width = MediaQuery.sizeOf(context).width;
-    final compact = width < 840;
+    final size = MediaQuery.sizeOf(context);
+    final compact = size.width < 840;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor:
           isDark ? const Color(0xFF0F172A) : const Color(0xFFF5F2FB),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 20 : 48,
-              vertical: 28,
-            ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 16 : 48,
+            vertical: compact ? 12 : 28,
+          ),
+          child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1080),
               child: compact
                   ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _BrandPanel(primary: primary),
-                        const SizedBox(height: 24),
-                        child,
+                        Flexible(
+                          flex: 3,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.center,
+                            child: SizedBox(
+                              width: size.width - 32,
+                              child: _BrandPanel(primary: primary),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Flexible(
+                          flex: 7,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.topCenter,
+                            child: SizedBox(
+                              width: size.width - 32,
+                              child: child,
+                            ),
+                          ),
+                        ),
                       ],
                     )
                   : Row(

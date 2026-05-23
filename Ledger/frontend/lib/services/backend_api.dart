@@ -201,7 +201,7 @@ class BackendApi {
     try {
       response = await _client
           .get(uri, headers: _headers())
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 60));
     } on TimeoutException {
       throw BackendApiException(_connectionErrorMessage);
     } on http.ClientException {
@@ -231,22 +231,22 @@ class BackendApi {
         case 'POST':
           response = await _client
               .post(uri, headers: headers, body: payload)
-              .timeout(const Duration(seconds: 5));
+              .timeout(const Duration(seconds: 60));
           break;
         case 'PUT':
           response = await _client
               .put(uri, headers: headers, body: payload)
-              .timeout(const Duration(seconds: 5));
+              .timeout(const Duration(seconds: 60));
           break;
         case 'PATCH':
           response = await _client
               .patch(uri, headers: headers, body: payload)
-              .timeout(const Duration(seconds: 5));
+              .timeout(const Duration(seconds: 60));
           break;
         case 'DELETE':
           response = await _client
               .delete(uri, headers: headers)
-              .timeout(const Duration(seconds: 5));
+              .timeout(const Duration(seconds: 60));
           break;
         default:
           throw const BackendApiException('Unsupported request method');
