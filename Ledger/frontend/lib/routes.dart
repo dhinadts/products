@@ -27,67 +27,93 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const LoginScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const LoginScreen()),
     ),
     GoRoute(
       path: '/login',
-      builder: (context, state) => const LoginScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const LoginScreen()),
     ),
     GoRoute(
       path: '/signup',
-      builder: (context, state) => const SignUpScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const SignUpScreen()),
     ),
     GoRoute(
       path: '/dashboard',
-      builder: (context, state) => const DashboardScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const DashboardScreen()),
     ),
     GoRoute(
       path: '/ledger',
-      builder: (context, state) => const LedgerScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const LedgerScreen()),
     ),
     GoRoute(
       path: '/balance-sheet',
-      builder: (context, state) => const BalanceSheetScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const BalanceSheetScreen()),
     ),
     GoRoute(
       path: '/reports',
-      builder: (context, state) => const ReportsScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const ReportsScreen()),
     ),
     GoRoute(
       path: '/settings',
-      builder: (context, state) => const SettingsScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const SettingsScreen()),
     ),
     GoRoute(
       path: '/notifications',
-      builder: (context, state) => const NotificationsScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const NotificationsScreen()),
     ),
     GoRoute(
       path: '/help',
-      builder: (context, state) => const HelpScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const HelpScreen()),
     ),
     GoRoute(
       path: '/profile',
-      builder: (context, state) => const ProfileScreen(),
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const ProfileScreen()),
     ),
     GoRoute(
       path: '/screen1',
-      builder: (context, state) =>
-          const ScreenPage(screenKey: 'screen1', title: 'Screen 1'),
+      pageBuilder: (context, state) => _buildWebsitePage(
+        state,
+        const ScreenPage(screenKey: 'screen1', title: 'Screen 1'),
+      ),
     ),
     GoRoute(
       path: '/screen2',
-      builder: (context, state) =>
-          const ScreenPage(screenKey: 'screen2', title: 'Screen 2'),
+      pageBuilder: (context, state) => _buildWebsitePage(
+        state,
+        const ScreenPage(screenKey: 'screen2', title: 'Screen 2'),
+      ),
     ),
     GoRoute(
       path: '/screen3',
-      builder: (context, state) =>
-          const ScreenPage(screenKey: 'screen3', title: 'Screen 3'),
+      pageBuilder: (context, state) => _buildWebsitePage(
+        state,
+        const ScreenPage(screenKey: 'screen3', title: 'Screen 3'),
+      ),
     ),
     GoRoute(
       path: '/screen4',
-      builder: (context, state) =>
-          const ScreenPage(screenKey: 'screen4', title: 'Screen 4'),
+      pageBuilder: (context, state) => _buildWebsitePage(
+        state,
+        const ScreenPage(screenKey: 'screen4', title: 'Screen 4'),
+      ),
     ),
   ],
 );
+
+NoTransitionPage<void> _buildWebsitePage(GoRouterState state, Widget child) {
+  return NoTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+  );
+}
