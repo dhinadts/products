@@ -19,12 +19,15 @@ export async function createApp() {
         origin: [
             'http://localhost:49663',
             'http://localhost:57186',
+            "http://localhost:3000",
+            "http://localhost:5173",
             'https://dhinadts.github.io',
             'https://dhinadts.github.io/products',
             'https://dhinadts.github.io/products/',
         ],
         credentials: true,
     }));
+    app.use(express.json());
     app.use(bodyParser.json());
     app.get('/api/health', (_req, res) => {
         res.json({ success: true, data: { status: 'ok' } });
