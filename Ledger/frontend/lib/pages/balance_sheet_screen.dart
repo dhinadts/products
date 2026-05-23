@@ -1,6 +1,5 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_const_declarations
-
 part of 'screens.dart';
+
 
 class BalanceSheetScreen extends StatelessWidget {
   const BalanceSheetScreen({super.key});
@@ -9,9 +8,8 @@ class BalanceSheetScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _AppShell(
       activeRoute: '/balance-sheet',
-      searchHint: 'Search Ledgers...',
-      fiscalBadge: 'FY not configured',
-      floatingIcon: Icons.receipt_long,
+      searchHint: 'Search balance sheet...',
+      floatingIcon: Icons.account_balance,
       child: _BalanceSheetContent(),
     );
   }
@@ -22,337 +20,133 @@ class _BalanceSheetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _ResponsiveGrid(
-          minTileWidth: 260,
-          children: [
-            _MetricCard(
-              label: 'NET WORTH (EQUITY)',
-              value: '₹ 0.00',
-              color: _primary,
-              note: 'No balance sheet items',
-            ),
-            _MetricCard(
-              label: 'TOTAL PAYABLES',
-              value: '₹ 0.00',
-              color: _red,
-              note: '₹ 0.00 due',
-            ),
-            _MetricCard(
-              label: 'CASH & LIQUIDITY',
-              value: '₹ 0.00',
-              color: _green,
-              icon: Icons.account_balance_wallet_outlined,
-              accent: _green,
-            ),
-          ],
-        ),
-        const SizedBox(height: 28),
-        _BalanceSheetTable(),
-        const SizedBox(height: 24),
-        _ComplianceFooter(),
-      ],
-    );
-  }
-}
+    return ValueListenableBuilder<int>(
+      valueListenable: _ledgerEntriesVersion,
+      builder: (context, version, _) {
+        return FutureBuilder<_LedgerData>(
+          key: ValueKey(version),
+          future: _fetchBalanceSheetData(),
+          builder: (context, snapshot) {
+            final data = snapshot.data ?? _LedgerData.empty();
+            final loading = snapshot.connectionState == ConnectionState.waiting;
 
-class _BalanceSheetTable extends StatelessWidget {
-  const _BalanceSheetTable();
+            final metrics = _LedgerMetrics.fromData(
+              entries: data.entries,
+              balances: data.balances,
+            );
 
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<BalanceSheetSummary>(
-      future: _backendApi.fetchBalanceSheet(),
-      builder: (context, snapshot) {
-        final summary = snapshot.data;
-        return _BalanceSheetTableView(
-          summary: summary ?? _emptyBalanceSheet,
-        );
-      },
-    );
-  }
-}
+            final totalAssets = metrics.availableBalance + metrics.receivable;
+            final totalLiabilities = metrics.payable;
+            final netWorth = totalAssets - totalLiabilities;
 
-class _BalanceSheetTableView extends StatelessWidget {
-  final BalanceSheetSummary summary;
-
-  const _BalanceSheetTableView({required this.summary});
-
-  @override
-  Widget build(BuildContext context) {
-    final liabilities = [
-      ..._sectionsFromItems(summary.equity),
-      ..._sectionsFromItems(summary.liabilities),
-    ];
-    final assets = _sectionsFromItems(summary.assets);
-    final liabilitiesTotal = summary.equity.fold<double>(
-          0,
-          (sum, item) => sum + item.value,
-        ) +
-        summary.liabilities.fold<double>(0, (sum, item) => sum + item.value);
-    final assetsTotal =
-        summary.assets.fold<double>(0, (sum, item) => sum + item.value);
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 820;
-
-        return _Panel(
-          padding: EdgeInsets.zero,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-                child: compact
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          _BalanceSheetHeaderTitle(),
-                          SizedBox(height: 14),
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: [
-                              _OutlineAction(icon: Icons.print, label: 'Print'),
-                              _OutlineAction(
-                                  icon: Icons.ios_share, label: 'Export Excel'),
-                            ],
-                          ),
-                        ],
-                      )
-                    : Row(
-                        children: const [
-                          Expanded(child: _BalanceSheetHeaderTitle()),
-                          _OutlineAction(icon: Icons.print, label: 'Print'),
-                          SizedBox(width: 12),
-                          _OutlineAction(
-                              icon: Icons.ios_share, label: 'Export Excel'),
-                        ],
-                      ),
-              ),
-              Divider(height: 1, color: _appBorder(context)),
-              if (compact)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ResponsiveGrid(
+                  minTileWidth: 260,
                   children: [
-                    _AccountColumn(
-                      title: 'LIABILITIES',
-                      sections: liabilities,
-                      totalLabel: 'Total Liabilities',
-                      total: _formatCurrency(liabilitiesTotal),
-                      fillBody: false,
+                    _MetricCard(
+                      label: 'TOTAL ASSETS',
+                      value: _formatCurrency(totalAssets),
+                      color: _green,
+                      note: loading ? 'Loading...' : 'Cash/bank + receivables',
+                      icon: Icons.trending_up,
                     ),
-                    Divider(height: 1, color: _appBorder(context)),
-                    _AccountColumn(
-                      title: 'ASSETS',
-                      sections: assets,
-                      totalLabel: 'Total Assets',
-                      total: _formatCurrency(assetsTotal),
-                      fillBody: false,
+                    _MetricCard(
+                      label: 'TOTAL LIABILITIES',
+                      value: _formatCurrency(totalLiabilities),
+                      color: _red,
+                      note: loading ? 'Loading...' : 'Pending payable amount',
+                      icon: Icons.trending_down,
+                    ),
+                    _MetricCard(
+                      label: 'NET WORTH',
+                      value: _formatCurrency(netWorth),
+                      color: _primary,
+                      note: 'Assets minus liabilities',
+                      icon: Icons.account_balance_wallet_outlined,
                     ),
                   ],
-                )
-              else
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: _AccountColumn(
-                          title: 'LIABILITIES',
-                          sections: liabilities,
-                          totalLabel: 'Total Liabilities',
-                          total: _formatCurrency(liabilitiesTotal),
-                          fillBody: true,
-                        ),
-                      ),
-                      VerticalDivider(
-                        width: 1,
-                        thickness: 1,
-                        color: _appBorder(context),
-                      ),
-                      Expanded(
-                        child: _AccountColumn(
-                          title: 'ASSETS',
-                          sections: assets,
-                          totalLabel: 'Total Assets',
-                          total: _formatCurrency(assetsTotal),
-                          fillBody: true,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-            ],
-          ),
+                const SizedBox(height: 24),
+                _BalanceSheetSummary(
+                  metrics: metrics,
+                  totalAssets: totalAssets,
+                  totalLiabilities: totalLiabilities,
+                  netWorth: netWorth,
+                ),
+                const SizedBox(height: 24),
+                _BalanceSheetBankTable(
+                  balances: data.balances,
+                  entries: data.entries,
+                  loading: loading,
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
-}
 
-class _BalanceSheetHeaderTitle extends StatelessWidget {
-  const _BalanceSheetHeaderTitle();
+  Future<_LedgerData> _fetchBalanceSheetData() async {
+    final results = await Future.wait([
+      _backendApi.fetchLedgerEntries(),
+      _backendApi.fetchBankBalances(),
+    ]);
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text(
-          'Balance Sheet',
-          style: TextStyle(
-            color: _primary,
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        SizedBox(height: 4),
-        Text('As of not configured'),
-      ],
+    return _LedgerData(
+      entries: results[0] as List<LedgerEntry>,
+      balances: results[1] as List<BankBalance>,
     );
   }
 }
 
-class _AccountColumn extends StatelessWidget {
-  final String title;
-  final List<_AccountSection> sections;
-  final String totalLabel;
-  final String total;
-  final bool fillBody;
+class _BalanceSheetSummary extends StatelessWidget {
+  final _LedgerMetrics metrics;
+  final double totalAssets;
+  final double totalLiabilities;
+  final double netWorth;
 
-  const _AccountColumn({
-    required this.title,
-    required this.sections,
-    required this.totalLabel,
-    required this.total,
-    required this.fillBody,
+  const _BalanceSheetSummary({
+    required this.metrics,
+    required this.totalAssets,
+    required this.totalLiabilities,
+    required this.netWorth,
   });
 
   @override
   Widget build(BuildContext context) {
-    final body = sections.isEmpty
-        ? const _EmptyPanelMessage(
-            icon: Icons.account_balance_outlined,
-            title: 'No items yet',
-            subtitle: 'Add balance sheet items to calculate this side.',
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: sections.map((section) {
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      section.title,
-                      style: const TextStyle(
-                        color: _primary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ...section.rows.map(
-                      (row) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                row[0],
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              row[1],
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Divider(
-                      height: 20,
-                      color: _appBorder(context),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          );
-
-    return DecoratedBox(
-      decoration: BoxDecoration(color: _appSurface(context)),
+    return _Panel(
+      padding: EdgeInsets.zero,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            color: _appHeaderSurface(context),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: _primary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'AMOUNT (₹)',
-                  style: TextStyle(
-                    color: _primary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ],
-            ),
+          _BalanceRow(
+            label: 'Available Cash / Bank',
+            amount: metrics.availableBalance,
+            color: _primary,
           ),
-          Divider(height: 1, color: _appBorder(context)),
-          if (fillBody) Expanded(child: body) else body,
-          Container(
-            color: _primaryContainer,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    totalLabel,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                Text(
-                  total,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
+          _BalanceRow(
+            label: 'Receivables - To Receive',
+            amount: metrics.receivable,
+            color: _green,
+          ),
+          _BalanceRow(
+            label: 'Total Assets',
+            amount: totalAssets,
+            color: _green,
+            strong: true,
+          ),
+          _BalanceRow(
+            label: 'Payables - To Pay',
+            amount: totalLiabilities,
+            color: _red,
+          ),
+          _BalanceRow(
+            label: 'Net Worth',
+            amount: netWorth,
+            color: netWorth >= 0 ? _primary : _red,
+            strong: true,
           ),
         ],
       ),
@@ -360,142 +154,157 @@ class _AccountColumn extends StatelessWidget {
   }
 }
 
-List<_AccountSection> _sectionsFromItems(List<BalanceSheetItem> items) {
-  final grouped = <String, List<List<String>>>{};
+class _BalanceSheetBankTable extends StatelessWidget {
+  final List<BankBalance> balances;
+  final List<LedgerEntry> entries;
+  final bool loading;
 
-  for (final item in items) {
-    grouped.putIfAbsent(item.group, () => []);
-    grouped[item.group]!.add([item.name, _formatIndianAmount(item.value)]);
-  }
-
-  return grouped.entries
-      .map((entry) => _AccountSection(entry.key, entry.value))
-      .toList();
-}
-
-const _emptyBalanceSheet = BalanceSheetSummary(
-  assets: [],
-  liabilities: [],
-  equity: [],
-);
-
-class _ComplianceFooter extends StatelessWidget {
-  const _ComplianceFooter();
+  const _BalanceSheetBankTable({
+    required this.balances,
+    required this.entries,
+    required this.loading,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 820;
-
-        if (compact) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _compliancePanel(context),
-              const SizedBox(height: 16),
-              _auditorPanel(context),
-            ],
-          );
-        }
-
-        return IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _compliancePanel(context)),
-              const SizedBox(width: 20),
-              Expanded(child: _auditorPanel(context)),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _compliancePanel(BuildContext context) {
     return _Panel(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.verified_outlined, color: _green),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Accounting Compliance',
-                  style: TextStyle(
-                    color: _green,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'This balance sheet has been prepared in accordance '
-                  'with the Indian Accounting Standards (Ind AS) and '
-                  'Schedule III of the Companies Act, 2013.',
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _auditorPanel(BuildContext context) {
-    return _Panel(
+      padding: EdgeInsets.zero,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        // ↓ stretch so the divider + signature sit at the bottom
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Auditor\'s Sign-off',
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Bank-wise Balance Sheet',
                 style: TextStyle(
                   color: _primary,
-                  fontSize: 18,
+                  fontSize: 22,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text('Not verified yet'),
-            ],
+            ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Divider(color: _appMuted(context)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
+          if (balances.isEmpty && !loading)
+            const _EmptyPanelMessage(
+              icon: Icons.account_balance_outlined,
+              title: 'No bank accounts',
+              subtitle:
+                  'Bank-wise balance will appear after accounts are configured.',
+            )
+          else
+            ...balances.map((account) {
+              final bankEntries = entries.where((entry) {
+                return _sameAccount(entry.ledgerRef, account.displayName);
+              }).toList();
+
+              final metrics = _LedgerMetrics.fromData(
+                entries: bankEntries,
+                balances: [account],
+                selectedAccount: account.displayName,
+              );
+
+              final assets = metrics.availableBalance + metrics.receivable;
+              final liabilities = metrics.payable;
+              final netWorth = assets - liabilities;
+
+              return Column(
                 children: [
-                  const Icon(Icons.draw_outlined, size: 16, color: _primary),
-                  const Text(
-                    'Auditor not configured',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  _BalanceRow(
+                    label: account.displayName,
+                    amount: metrics.availableBalance,
+                    color: _primary,
+                    subtitle: 'Available balance',
+                  ),
+                  _BalanceRow(
+                    label: 'Receivable',
+                    amount: metrics.receivable,
+                    color: _green,
+                  ),
+                  _BalanceRow(
+                    label: 'Payable',
+                    amount: metrics.payable,
+                    color: _red,
+                  ),
+                  _BalanceRow(
+                    label: 'Bank Net Worth',
+                    amount: netWorth,
+                    color: netWorth >= 0 ? _green : _red,
+                    strong: true,
                   ),
                 ],
-              ),
-            ],
-          ),
+              );
+            }),
         ],
       ),
     );
   }
 }
 
-class _AccountSection {
-  final String title;
-  final List<List<String>> rows;
+class _BalanceRow extends StatelessWidget {
+  final String label;
+  final String? subtitle;
+  final double amount;
+  final Color color;
+  final bool strong;
 
-  const _AccountSection(this.title, this.rows);
+  const _BalanceRow({
+    required this.label,
+    required this.amount,
+    required this.color,
+    this.subtitle,
+    this.strong = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: strong ? _appHeaderSurface(context) : null,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: subtitle == null
+                ? Text(
+                    label,
+                    style: TextStyle(
+                      color: _appText(context),
+                      fontWeight: strong ? FontWeight.w900 : FontWeight.w600,
+                    ),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: _appText(context),
+                          fontWeight:
+                              strong ? FontWeight.w900 : FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          color: _appMuted(context),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+          Text(
+            _formatCurrency(amount),
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: color,
+              fontSize: strong ? 17 : 15,
+              fontWeight: strong ? FontWeight.w900 : FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

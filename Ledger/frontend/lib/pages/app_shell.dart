@@ -2,7 +2,7 @@
 
 part of 'screens.dart';
 
-class _AppShell extends StatelessWidget {
+class _AppShell extends StatefulWidget {
   final String activeRoute;
   final String searchHint;
   final String? fiscalBadge;
@@ -16,6 +16,15 @@ class _AppShell extends StatelessWidget {
     required this.child,
     this.fiscalBadge,
   });
+
+  @override
+  State<_AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<_AppShell> {
+  static const double _floatingButtonSize = 56;
+  static const double _floatingButtonMargin = 16;
+  Offset? _floatingButtonOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -33,46 +42,119 @@ class _AppShell extends StatelessWidget {
           backgroundColor: _appBackground(context),
           drawer: showSidebar || showRail
               ? null
-              : Drawer(child: _SideNav(activeRoute: activeRoute)),
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: _primary,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            onPressed: () => _showAppFlowModal(
-              context,
-              _AppFlowModalType.fromRoute(activeRoute),
-            ),
-            child: Icon(floatingIcon),
-          ),
+              : Drawer(child: _SideNav(activeRoute: widget.activeRoute)),
           body: SafeArea(
-            child: Row(
-              children: [
-                if (showSidebar) _SideNav(activeRoute: activeRoute),
-                if (showRail) _TabletNavigationRail(activeRoute: activeRoute),
-                Expanded(
-                  child: Column(
-                    children: [
-                      _TopBar(
-                        showMenu: !showSidebar,
-                        searchHint: searchHint,
-                        fiscalBadge: fiscalBadge,
-                      ),
-                      Expanded(
-                        child: _PageScrollView(
-                          padding: pagePadding,
-                          child: child,
+            child: LayoutBuilder(
+              builder: (context, safeConstraints) {
+                final offset = _clampedFloatingButtonOffset(safeConstraints);
+
+                return Stack(
+                  children: [
+                    Row(
+                      children: [
+                        if (showSidebar)
+                          _SideNav(activeRoute: widget.activeRoute),
+                        if (showRail)
+                          _TabletNavigationRail(
+                              activeRoute: widget.activeRoute),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              _TopBar(
+                                showMenu: !showSidebar,
+                                searchHint: widget.searchHint,
+                                fiscalBadge: widget.fiscalBadge,
+                              ),
+                              Expanded(
+                                child: _PageScrollView(
+                                  padding: pagePadding,
+                                  child: widget.child,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                      ],
+                    ),
+                    Positioned(
+                      left: offset.dx,
+                      top: offset.dy,
+                      child: _MovableFloatingButton(
+                        icon: widget.floatingIcon,
+                        onPressed: () => _showAppFlowModal(
+                          context,
+                          _AppFlowModalType.fromRoute(widget.activeRoute),
+                        ),
+                        onDragUpdate: (delta) {
+                          setState(() {
+                            final current = _floatingButtonOffset ?? offset;
+                            _floatingButtonOffset =
+                                _clampOffset(current + delta, safeConstraints);
+                          });
+                        },
                       ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         );
       },
+    );
+  }
+
+  Offset _clampedFloatingButtonOffset(BoxConstraints constraints) {
+    final current = _floatingButtonOffset ??
+        Offset(
+          constraints.maxWidth - _floatingButtonSize - _floatingButtonMargin,
+          constraints.maxHeight -
+              _floatingButtonSize -
+              (_floatingButtonMargin * 5),
+        );
+    return _clampOffset(current, constraints);
+  }
+
+  Offset _clampOffset(Offset offset, BoxConstraints constraints) {
+    final maxX =
+        (constraints.maxWidth - _floatingButtonSize - _floatingButtonMargin)
+            .clamp(_floatingButtonMargin, double.infinity);
+    final maxY =
+        (constraints.maxHeight - _floatingButtonSize - _floatingButtonMargin)
+            .clamp(_floatingButtonMargin, double.infinity);
+
+    return Offset(
+      offset.dx.clamp(_floatingButtonMargin, maxX).toDouble(),
+      offset.dy.clamp(_floatingButtonMargin, maxY).toDouble(),
+    );
+  }
+}
+
+class _MovableFloatingButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+  final ValueChanged<Offset> onDragUpdate;
+
+  const _MovableFloatingButton({
+    required this.icon,
+    required this.onPressed,
+    required this.onDragUpdate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onPanUpdate: (details) => onDragUpdate(details.delta),
+      child: FloatingActionButton(
+        tooltip: 'Drag or tap',
+        backgroundColor: _primary,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        onPressed: onPressed,
+        child: Icon(icon),
+      ),
     );
   }
 }
@@ -236,7 +318,7 @@ class _TopBar extends StatelessWidget {
                 runSpacing: 6,
                 children: [
                   Text(
-                    'Dhinadts IT Solutions & Services (OPC) Pvt. Ltd.',
+                    "DHINADTS IT SOLUTIONS AND SUPPORT (OPC) PRIVATE LIMITED",
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: _primary,
@@ -351,7 +433,7 @@ class _SideNav extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'DHINADTS PRO',
+                      'DHINADTS OPC',
                       style: TextStyle(
                         color: _primary,
                         fontSize: 28,
@@ -623,6 +705,9 @@ class _AppFlowModalShell extends StatelessWidget {
   final List<Widget> children;
   final String primaryActionLabel;
   final String secondaryActionLabel;
+  final VoidCallback? onPrimaryPressed;
+  final VoidCallback? onSecondaryPressed;
+  final bool primaryActionDisabled;
 
   const _AppFlowModalShell({
     required this.title,
@@ -631,6 +716,9 @@ class _AppFlowModalShell extends StatelessWidget {
     required this.children,
     required this.primaryActionLabel,
     this.secondaryActionLabel = 'Cancel',
+    this.onPrimaryPressed,
+    this.onSecondaryPressed,
+    this.primaryActionDisabled = false,
   });
 
   @override
@@ -687,12 +775,14 @@ class _AppFlowModalShell extends StatelessWidget {
               children: [
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(foregroundColor: _primary),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: onSecondaryPressed ?? () => Navigator.pop(context),
                   child: Text(secondaryActionLabel),
                 ),
                 FilledButton(
                   style: FilledButton.styleFrom(backgroundColor: _primary),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: primaryActionDisabled
+                      ? null
+                      : onPrimaryPressed ?? () => Navigator.pop(context),
                   child: Text(primaryActionLabel),
                 ),
               ],
@@ -704,26 +794,356 @@ class _AppFlowModalShell extends StatelessWidget {
   }
 }
 
-class _LedgerEntryModal extends StatelessWidget {
+class _LedgerEntryModal extends StatefulWidget {
   const _LedgerEntryModal();
 
   @override
+  State<_LedgerEntryModal> createState() => _LedgerEntryModalState();
+}
+
+class _LedgerEntryModalState extends State<_LedgerEntryModal> {
+  final _formKey = GlobalKey<FormState>();
+  final _amountController = TextEditingController(text: '0.00');
+  final _narrationController = TextEditingController();
+  late final Future<List<BankBalance>> _bankBalancesFuture;
+  String _voucherType = 'Journal';
+  String _entryType = 'Select';
+  String _status = 'Select';
+  String? _selectedAccount;
+  DateTime _entryDate = DateTime.now();
+  bool _isSaving = false;
+  String? _error;
+
+  static const _voucherTypes = [
+    'Journal',
+    'Payment',
+    'Receipt',
+    'Sales',
+    'Purchase',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _bankBalancesFuture = _backendApi.fetchBankBalances();
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _narrationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const _AppFlowModalShell(
+    return _AppFlowModalShell(
       title: 'Add Ledger Entry',
       subtitle: 'Create a voucher-ready transaction for the active ledger.',
       icon: Icons.add_circle_outline,
-      primaryActionLabel: 'Save Entry',
+      primaryActionLabel: _isSaving ? 'Saving...' : 'Save Entry',
       secondaryActionLabel: 'Save Draft',
+      primaryActionDisabled: _isSaving,
+      onPrimaryPressed: _saveEntry,
+      onSecondaryPressed: _isSaving ? null : () => Navigator.pop(context),
       children: [
-        _ModalField(label: 'Voucher Type', value: 'Not selected'),
-        _ModalField(label: 'Entry Date', value: 'Not selected'),
-        _ModalField(label: 'Account', value: 'Not selected'),
-        _ModalField(label: 'Debit Amount', value: '₹ 0.00'),
-        _ModalField(label: 'Credit Amount', value: '₹ 0.00'),
-        _ModalField(label: 'Narration', value: 'Not added'),
+        Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: _voucherType,
+                decoration: const InputDecoration(
+                  labelText: 'Voucher Type',
+                  border: OutlineInputBorder(),
+                ),
+                items: _voucherTypes
+                    .map(
+                      (type) => DropdownMenuItem(
+                        value: type,
+                        child: Text(type),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _isSaving
+                    ? null
+                    : (value) => setState(
+                          () => _voucherType = value ?? _voucherType,
+                        ),
+              ),
+              const SizedBox(height: 14),
+              InkWell(
+                onTap: _isSaving ? null : _pickDateTime,
+                borderRadius: BorderRadius.circular(4),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Entry Date & Time',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.event_available_outlined),
+                  ),
+                  child: Text(_formatDateTime(_entryDate)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              FutureBuilder<List<BankBalance>>(
+                future: _bankBalancesFuture,
+                builder: (context, snapshot) {
+                  final accounts = snapshot.data ?? const <BankBalance>[];
+                  final isLoading =
+                      snapshot.connectionState == ConnectionState.waiting;
+
+                  return DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    initialValue: _selectedAccount,
+                    decoration: InputDecoration(
+                      labelText: 'Account',
+                      border: const OutlineInputBorder(),
+                      helperText: isLoading
+                          ? 'Loading bank accounts...'
+                          : 'Select linked bank account',
+                    ),
+                    items: accounts
+                        .map(
+                          (account) => DropdownMenuItem(
+                            value: account.displayName,
+                            child: Text(
+                              '${account.displayName} (${_formatCurrency(account.balance)})',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: _isSaving || isLoading
+                        ? null
+                        : (value) => setState(() => _selectedAccount = value),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Select an account.';
+                      }
+                      return null;
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                initialValue: _entryType,
+                decoration: const InputDecoration(
+                  labelText: 'Entry Type',
+                  border: OutlineInputBorder(),
+                ),
+                items: const ['Select', 'Debit', 'Credit']
+                    .map(
+                      (type) => DropdownMenuItem(
+                        value: type,
+                        child: Text(type),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _isSaving
+                    ? null
+                    : (value) => setState(() {
+                          _entryType = value ?? 'Select';
+                          _status = 'Select';
+                        }),
+                validator: (value) {
+                  if (value == null || value == 'Select') {
+                    return 'Select debit or credit.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _amountController,
+                enabled: !_isSaving,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  labelText: _entryType == 'Debit'
+                      ? 'Debit Amount'
+                      : _entryType == 'Credit'
+                          ? 'Credit Amount'
+                          : 'Amount',
+                  prefixText: '₹ ',
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                key: ValueKey(
+                    'ledger-status-$_status-${_availableStatuses.join('|')}'),
+                initialValue: _status,
+                decoration: InputDecoration(
+                  labelText: 'Status',
+                  border: const OutlineInputBorder(),
+                  helperText: _statusHelperText,
+                ),
+                items: ['Select', ..._availableStatuses]
+                    .map(
+                      (status) => DropdownMenuItem(
+                        value: status,
+                        child: Text(status),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _isSaving || _availableStatuses.isEmpty
+                    ? null
+                    : (value) => setState(() => _status = value ?? 'Select'),
+                validator: (value) {
+                  if (value == null || value == 'Select') {
+                    return 'Select status.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _narrationController,
+                enabled: !_isSaving,
+                minLines: 2,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Narration',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: _red),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _pickDateTime() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _entryDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (selected == null || !mounted) {
+      return;
+    }
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_entryDate),
+    );
+    if (time == null) {
+      return;
+    }
+
+    setState(() {
+      _entryDate = DateTime(
+        selected.year,
+        selected.month,
+        selected.day,
+        time.hour,
+        time.minute,
+      );
+    });
+  }
+
+  List<String> get _availableStatuses {
+    if (_entryType == 'Debit') {
+      return const ['Received', 'To Receive'];
+    }
+    if (_entryType == 'Credit') {
+      return const ['Paid', 'Unpaid', 'On Hold'];
+    }
+    return const <String>[];
+  }
+
+  String get _statusHelperText {
+    if (_entryType == 'Debit') {
+      return 'Debit entries use received statuses';
+    }
+    if (_entryType == 'Credit') {
+      return 'Credit entries use payment statuses';
+    }
+    return 'Select debit or credit first';
+  }
+
+  Future<void> _saveEntry() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    if (_entryType == 'Select') {
+      setState(() => _error = 'Select debit or credit.');
+      return;
+    }
+    final amount = _parseAmount(_amountController.text);
+    if (amount <= 0) {
+      setState(() => _error = 'Enter amount greater than zero.');
+      return;
+    }
+    if (_status == 'Select') {
+      setState(() => _error = 'Select status.');
+      return;
+    }
+    final debit = _entryType == 'Debit' ? amount : 0.0;
+    final credit = _entryType == 'Credit' ? amount : 0.0;
+
+    setState(() {
+      _isSaving = true;
+      _error = null;
+    });
+
+    final account = _selectedAccount ?? '';
+    final narration = _narrationController.text.trim();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      await _backendApi.createLedgerEntry({
+        'date': _entryDate.toIso8601String(),
+        'particulars':
+            narration.isEmpty ? '$_voucherType - $account' : narration,
+        'ledgerRef': account,
+        'debit': debit,
+        'credit': credit,
+        'status': _status,
+        'tags': [_voucherType],
+      });
+
+      _ledgerEntriesVersion.value++;
+      if (mounted) {
+        navigator.pop();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Ledger entry saved.',
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = error.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  double _parseAmount(String value) {
+    final cleaned = value.replaceAll(',', '').replaceAll('₹', '').trim();
+    return double.tryParse(cleaned) ?? 0;
   }
 }
 

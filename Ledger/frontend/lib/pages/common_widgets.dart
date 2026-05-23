@@ -178,15 +178,15 @@ class _DataPanel extends StatelessWidget {
   final List<String> columns;
   final List<List<Widget>> rows;
   final Widget? footer;
-  final double minTableWidth;
 
   const _DataPanel({
     required this.columns,
     required this.rows,
     this.title,
+    // Kept for existing/common table callers; page-specific tables can ignore it.
+    // ignore: unused_element_parameter
     this.action,
     this.footer,
-    this.minTableWidth = 900,
   });
 
   @override
@@ -195,9 +195,8 @@ class _DataPanel extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final tableMinWidth = constraints.maxWidth < minTableWidth
-              ? minTableWidth
-              : constraints.maxWidth;
+          final tableMinWidth =
+              constraints.maxWidth < 900 ? 900.0 : constraints.maxWidth;
 
           return Column(
             children: [
@@ -216,9 +215,13 @@ class _DataPanel extends StatelessWidget {
                         ),
                       ),
                       if (action != null)
-                        Text(action!,
-                            style: const TextStyle(
-                                color: _primary, fontWeight: FontWeight.w800)),
+                        Text(
+                          action!,
+                          style: const TextStyle(
+                            color: _primary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       if (action != null)
                         const Icon(Icons.arrow_forward, color: _primary),
                     ],
@@ -391,41 +394,6 @@ class _KpiBlock extends StatelessWidget {
           Text(value,
               style:
                   const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _ActionTile(
-      {required this.icon, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 108,
-      decoration: BoxDecoration(border: Border.all(color: _appBorder(context))),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: color, fontWeight: FontWeight.w800, fontSize: 13),
-            ),
-          ),
         ],
       ),
     );

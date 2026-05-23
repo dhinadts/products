@@ -69,6 +69,15 @@ class BackendApi {
         .toList();
   }
 
+  Future<List<BankBalance>> fetchBankBalances() async {
+    final data = await _get('/api/bank-balances');
+    final balances = data as List<dynamic>? ?? const [];
+    return balances
+        .whereType<Map<String, dynamic>>()
+        .map(BankBalance.fromJson)
+        .toList();
+  }
+
   Future<LedgerEntry> createLedgerEntry(Map<String, dynamic> entry) async {
     final data = await _send('POST', '/api/ledger/entry', body: entry);
     return LedgerEntry.fromJson(data as Map<String, dynamic>);
@@ -234,8 +243,9 @@ class BackendApi {
               .timeout(const Duration(seconds: 5));
           break;
         case 'DELETE':
-          response =
-              await _client.delete(uri).timeout(const Duration(seconds: 5));
+          response = await _client
+              .delete(uri, headers: headers)
+              .timeout(const Duration(seconds: 5));
           break;
         default:
           throw const BackendApiException('Unsupported request method');

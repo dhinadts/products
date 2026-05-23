@@ -5,12 +5,15 @@ import { AuthenticationError, UserInputError } from 'apollo-server-errors';
 import { config } from '../config';
 import { prisma } from '../prisma';
 import { GraphQLContext } from './context';
+import { LedgerService } from '../modules/ledger/ledger.service';
 
 const createToken = (userId: string, role: string) =>
     jwt.sign({ userId, role }, config.jwtSecret, { expiresIn: '15m' });
 
 const createRefreshToken = (userId: string, role: string) =>
     jwt.sign({ userId, role }, config.jwtRefreshSecret, { expiresIn: '30d' });
+
+const ledgerService = new LedgerService();
 
 export const resolvers = {
     DateTime: new GraphQLScalarType({
@@ -121,17 +124,9 @@ export const resolvers = {
             if (!context.user) {
                 throw new AuthenticationError('Authentication required');
             }
-            return prisma.ledgerEntry.create({
-                data: {
-                    date: new Date(args.input.date),
-                    particulars: args.input.particulars,
-                    ledgerRef: args.input.ledgerRef,
-                    debit: args.input.debit,
-                    credit: args.input.credit,
-                    status: args.input.status,
-                    tags: args.input.tags,
-                    createdBy: context.user.userId,
-                },
+            return ledgerService.createEntry({
+                ...args.input,
+                createdBy: context.user.userId,
             });
         },
 

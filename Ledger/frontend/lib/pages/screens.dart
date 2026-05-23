@@ -1,11 +1,14 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_const_declarations
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../app_theme.dart';
 import '../models/backend_models.dart';
 import '../services/backend_api.dart';
+import '../services/statement_actions_stub.dart'
+    if (dart.library.html) '../services/statement_actions_web.dart';
 import '../state/auth_cubit.dart';
 
 part 'screen_router.dart';
@@ -29,6 +32,54 @@ const _text = Color(0xFF1B1B21);
 const _muted = Color(0xFF454652);
 
 final _backendApi = BackendApi();
+final _ledgerEntriesVersion = ValueNotifier<int>(0);
+
+String _normalizeLedgerStatus(String status) {
+  final value = status.trim().toLowerCase();
+  switch (value) {
+    case 'paid':
+      return 'Paid';
+    case 'unpaid':
+      return 'Unpaid';
+    case 'on hold':
+    case 'on-hold':
+    case 'on-hold to pay':
+    case 'draft':
+      return 'On Hold';
+    case 'received':
+    case 'recieved':
+    case 'posted':
+      return 'Received';
+    case 'to receive':
+    case 'yet to receive':
+    case 'yet to recieve':
+      return 'To Receive';
+    case 'not received':
+    case 'not recieved':
+    case 'not received with reason':
+    case 'not recieved with reason':
+      return 'Not Received';
+    default:
+      return status.isEmpty ? 'To Receive' : status;
+  }
+}
+
+Color _ledgerStatusColor(String status) {
+  switch (_normalizeLedgerStatus(status)) {
+    case 'Paid':
+    case 'Received':
+      return const Color(0xFF00C853);
+    case 'Unpaid':
+    case 'Not Received':
+      return const Color(0xFFFF3D00);
+    case 'On Hold':
+      return const Color(0xFFF0B90B);
+    case 'To Receive':
+      return const Color(0xFF00B8D4);
+    default:
+      return _muted;
+  }
+}
 
 bool _isDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
@@ -71,6 +122,17 @@ String _formatDate(DateTime date) {
     'Dec',
   ];
   return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
+}
+
+String _formatDateTime(DateTime date) {
+  final hour = date.hour == 0
+      ? 12
+      : date.hour > 12
+          ? date.hour - 12
+          : date.hour;
+  final minute = date.minute.toString().padLeft(2, '0');
+  final period = date.hour >= 12 ? 'PM' : 'AM';
+  return '${_formatDate(date)} $hour:$minute $period';
 }
 
 String _formatCurrency(double value) => '₹ ${_formatIndianAmount(value)}';
@@ -125,32 +187,6 @@ class _ResponsiveGrid extends StatelessWidget {
               .toList(),
         );
       },
-    );
-  }
-}
-
-class _FakeInput extends StatelessWidget {
-  final String text;
-  final IconData icon;
-
-  const _FakeInput(this.text, this.icon);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 46,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: _appBorder(context)),
-        borderRadius: BorderRadius.circular(4),
-        color: _appSurface(context),
-      ),
-      child: Row(
-        children: [
-          Expanded(child: Text(text)),
-          Icon(icon, size: 18),
-        ],
-      ),
     );
   }
 }

@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import { ApolloServer } from 'apollo-server-express';
 import { authRouter } from './modules/auth/auth.routes';
 import { ledgerRouter } from './modules/ledger/ledger.routes';
+import { bankBalancesRouter } from './modules/bank-balances/bank-balances.routes';
 import { balanceSheetRouter } from './modules/balance-sheet/balance-sheet.routes';
 import { notificationRouter } from './modules/notifications/notification.routes';
 import { errorHandler } from './middleware/error-handler';
@@ -21,6 +22,7 @@ export async function createApp() {
     });
     app.use('/api/auth', authRouter);
     app.use('/api/ledger', ledgerRouter);
+    app.use('/api/bank-balances', bankBalancesRouter);
     app.use('/api/balance-sheet', balanceSheetRouter);
     app.use('/api/notifications', notificationRouter);
 

@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'app_theme.dart';
 import 'routes.dart';
 import 'state/auth_cubit.dart';
+import 'services/auth_session.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await AuthSession.restore();
+  } catch (e) {
+    debugPrint('Auth restore failed: $e');
+  }
+
   runApp(const BalanceSheetLedgerApp());
 }
 

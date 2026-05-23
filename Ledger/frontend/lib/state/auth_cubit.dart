@@ -19,13 +19,16 @@ class AuthState extends Equatable {
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(AuthState(result: AuthSession.current));
 
-  void authenticate(AuthResult result) {
-    AuthSession.save(result);
+  Future<void> authenticate(
+    AuthResult result, {
+    bool rememberMe = false,
+  }) async {
+    await AuthSession.save(result, rememberMe: rememberMe);
     emit(AuthState(result: result));
   }
 
-  void logout() {
-    AuthSession.clear();
+  Future<void> logout() async {
+    await AuthSession.clear();
     emit(const AuthState());
   }
 }

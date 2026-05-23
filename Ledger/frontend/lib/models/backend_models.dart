@@ -47,6 +47,34 @@ class LedgerEntry {
       };
 }
 
+class BankBalance {
+  final String id;
+  final String accountName;
+  final String bankName;
+  final String accountType;
+  final double balance;
+
+  const BankBalance({
+    required this.id,
+    required this.accountName,
+    required this.bankName,
+    required this.accountType,
+    required this.balance,
+  });
+
+  String get displayName => '$accountName - $bankName';
+
+  factory BankBalance.fromJson(Map<String, dynamic> json) {
+    return BankBalance(
+      id: json['id']?.toString() ?? '',
+      accountName: json['accountName']?.toString() ?? '',
+      bankName: json['bankName']?.toString() ?? '',
+      accountType: json['accountType']?.toString() ?? '',
+      balance: _toDouble(json['balance']),
+    );
+  }
+}
+
 class BalanceSheetItem {
   final String id;
   final String name;
@@ -167,6 +195,13 @@ class AuthUser {
       role: json['role']?.toString() ?? 'user',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        'role': role,
+      };
 }
 
 class AuthResult {
@@ -187,6 +222,12 @@ class AuthResult {
       user: AuthUser.fromJson(json['user'] as Map<String, dynamic>? ?? {}),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'token': token,
+        'refreshToken': refreshToken,
+        'user': user.toJson(),
+      };
 }
 
 double _toDouble(dynamic value) {

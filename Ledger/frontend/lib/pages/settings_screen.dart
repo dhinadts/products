@@ -16,8 +16,32 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-class _SettingsContent extends StatelessWidget {
+class _SettingsContent extends StatefulWidget {
   const _SettingsContent();
+
+  @override
+  State<_SettingsContent> createState() => _SettingsContentState();
+}
+
+class _SettingsContentState extends State<_SettingsContent> {
+  bool gstAlerts = true;
+  bool payableAlerts = true;
+  bool monthlyCloseAlerts = true;
+  bool adminApproval = true;
+
+  static const String companyName =
+      'DHINADTS IT SOLUTIONS AND SUPPORT (OPC) PRIVATE LIMITED';
+  static const String tradeName =
+      'DHINADTS IT SOLUTIONS AND SUPPORT (OPC) PRIVATE LIMITED';
+  static const String gstin = '33AALCD1728Q1Z9';
+  static const String registrationType = 'Regular';
+  static const String registrationDate = '23 Dec 2024';
+  static const String directorName = 'DHINAKARAN KALAIMANI';
+  static const String directorStatus = 'DIRECTOR';
+  static const String state = 'Tamil Nadu';
+
+  static const String address =
+      'Old No 74/1, New No 122G/4J, Sakthivel Nager, Seetharam Palayam, Tiruchengode, Namakkal, Tamil Nadu - 637209';
 
   @override
   Widget build(BuildContext context) {
@@ -27,48 +51,151 @@ class _SettingsContent extends StatelessWidget {
         _PageTitle(
           title: 'Settings',
           subtitle:
-              'Manage company preferences, compliance defaults, and access.',
+              'Company profile, GST compliance, ledger defaults, alerts, and access control.',
         ),
-        SizedBox(height: 24),
+        const SizedBox(height: 24),
         _ResponsiveGrid(
           minTileWidth: 320,
           children: [
             _SettingsCard(
               icon: Icons.business_outlined,
               title: 'Company Profile',
-              description:
-                  'Company name, GSTIN, address, and fiscal year are not configured.',
-              status: 'Not configured',
-              statusColor: _muted,
+              description: companyName,
+              status: 'Configured',
+              statusColor: _green,
+              onTap: () => _showCompanyProfile(context),
             ),
             _SettingsCard(
               icon: Icons.receipt_long_outlined,
+              title: 'GST Compliance',
+              description: 'GSTIN $gstin • $registrationType registration',
+              status: 'Active',
+              statusColor: _green,
+              onTap: () => _showGstDetails(context),
+            ),
+            _SettingsCard(
+              icon: Icons.menu_book_outlined,
               title: 'Ledger Defaults',
               description:
-                  'Voucher numbering, rupee formatting, debit/credit labels, and account groups.',
-              status: 'Not configured',
-              statusColor: _muted,
+                  'INR currency, debit/credit status logic, voucher prefixes, and account groups.',
+              status: 'Ready',
+              statusColor: _primary,
+              onTap: () => _showLedgerDefaults(context),
             ),
             _SettingsCard(
               icon: Icons.security_outlined,
               title: 'Access Control',
-              description:
-                  'Admin session, role permissions, approval limits, and audit trail visibility.',
-              status: '0 admins',
-              statusColor: _muted,
+              description: '$directorName is configured as company admin.',
+              status: '1 admin',
+              statusColor: _green,
+              onTap: () => _showAccessControl(context),
             ),
             _SettingsCard(
               icon: Icons.notifications_active_outlined,
               title: 'Alerts',
               description:
-                  'GST filing reminders, overdue payable alerts, and monthly close notifications.',
-              status: 'Off',
-              statusColor: _muted,
+                  'GST filing, overdue payables, and monthly close reminders.',
+              status: gstAlerts || payableAlerts || monthlyCloseAlerts
+                  ? 'On'
+                  : 'Off',
+              statusColor: gstAlerts || payableAlerts || monthlyCloseAlerts
+                  ? _green
+                  : _muted,
+              onTap: () => _showAlerts(context),
             ),
           ],
         ),
-        SizedBox(height: 24),
-        _PreferencePanel(),
+        const SizedBox(height: 24),
+        _PreferencePanel(
+          gstAlerts: gstAlerts,
+          payableAlerts: payableAlerts,
+          monthlyCloseAlerts: monthlyCloseAlerts,
+          adminApproval: adminApproval,
+          onGstAlertsChanged: (value) => setState(() => gstAlerts = value),
+          onPayableAlertsChanged: (value) =>
+              setState(() => payableAlerts = value),
+          onMonthlyCloseAlertsChanged: (value) =>
+              setState(() => monthlyCloseAlerts = value),
+          onAdminApprovalChanged: (value) =>
+              setState(() => adminApproval = value),
+        ),
+      ],
+    );
+  }
+
+  void _showCompanyProfile(BuildContext context) {
+    _showSettingsSheet(
+      context,
+      title: 'Company Profile',
+      children: const [
+        _PreferenceRow(label: 'Legal Name', value: companyName),
+        _PreferenceRow(label: 'Trade Name', value: tradeName),
+        _PreferenceRow(label: 'Constitution', value: 'OPC Private Limited'),
+        _PreferenceRow(label: 'Principal Place', value: address),
+        _PreferenceRow(label: 'State', value: state),
+      ],
+    );
+  }
+
+  void _showGstDetails(BuildContext context) {
+    _showSettingsSheet(
+      context,
+      title: 'GST Compliance Details',
+      children: const [
+        _PreferenceRow(label: 'GSTIN', value: gstin),
+        _PreferenceRow(label: 'Registration Type', value: registrationType),
+        _PreferenceRow(label: 'Valid From', value: registrationDate),
+        _PreferenceRow(label: 'Validity', value: 'Not Applicable'),
+        _PreferenceRow(label: 'Additional Places', value: '0'),
+      ],
+    );
+  }
+
+  void _showLedgerDefaults(BuildContext context) {
+    _showSettingsSheet(
+      context,
+      title: 'Ledger Defaults',
+      children: const [
+        _PreferenceRow(label: 'Currency', value: 'Indian Rupee (₹)'),
+        _PreferenceRow(label: 'Date Format', value: 'DD MMM YYYY'),
+        _PreferenceRow(label: 'Voucher Prefix', value: 'GL / PV / SI'),
+        _PreferenceRow(label: 'Debit Status', value: 'Received / To Receive'),
+        _PreferenceRow(
+            label: 'Credit Status', value: 'Paid / Unpaid / On Hold'),
+        _PreferenceRow(
+            label: 'Balance Logic',
+            value: 'Opening + Received Debit - Paid Credit'),
+      ],
+    );
+  }
+
+  void _showAccessControl(BuildContext context) {
+    _showSettingsSheet(
+      context,
+      title: 'Access Control',
+      children: const [
+        _PreferenceRow(label: 'Admin Name', value: directorName),
+        _PreferenceRow(label: 'Role', value: directorStatus),
+        _PreferenceRow(label: 'Resident State', value: state),
+        _PreferenceRow(label: 'Approval Mode', value: 'Admin review required'),
+      ],
+    );
+  }
+
+  void _showAlerts(BuildContext context) {
+    _showSettingsSheet(
+      context,
+      title: 'Alerts',
+      children: [
+        _PreferenceRow(
+            label: 'GST Filing Reminder',
+            value: gstAlerts ? 'Enabled' : 'Disabled'),
+        _PreferenceRow(
+            label: 'Overdue Payable Alert',
+            value: payableAlerts ? 'Enabled' : 'Disabled'),
+        _PreferenceRow(
+            label: 'Monthly Close Alert',
+            value: monthlyCloseAlerts ? 'Enabled' : 'Disabled'),
       ],
     );
   }
@@ -80,6 +207,7 @@ class _SettingsCard extends StatelessWidget {
   final String description;
   final String status;
   final Color statusColor;
+  final VoidCallback onTap;
 
   const _SettingsCard({
     required this.icon,
@@ -87,6 +215,90 @@ class _SettingsCard extends StatelessWidget {
     required this.description,
     required this.status,
     required this.statusColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 176,
+      child: _Panel(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, color: _primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _Chip(label: status, color: statusColor),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: Text(
+                    description,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _appMuted(context),
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Tap to view details',
+                  style: TextStyle(
+                    color: _primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+class _PreferencePanel extends StatelessWidget {
+  final bool gstAlerts;
+  final bool payableAlerts;
+  final bool monthlyCloseAlerts;
+  final bool adminApproval;
+  final ValueChanged<bool> onGstAlertsChanged;
+  final ValueChanged<bool> onPayableAlertsChanged;
+  final ValueChanged<bool> onMonthlyCloseAlertsChanged;
+  final ValueChanged<bool> onAdminApprovalChanged;
+
+  const _PreferencePanel({
+    required this.gstAlerts,
+    required this.payableAlerts,
+    required this.monthlyCloseAlerts,
+    required this.adminApproval,
+    required this.onGstAlertsChanged,
+    required this.onPayableAlertsChanged,
+    required this.onMonthlyCloseAlertsChanged,
+    required this.onAdminApprovalChanged,
   });
 
   @override
@@ -95,45 +307,37 @@ class _SettingsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Icon(icon, color: _primary),
-              Text(
-                title,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-              _Chip(label: status, color: statusColor),
-            ],
+          const Text(
+            'Preference Defaults',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: 16),
-          Text(description, style: TextStyle(color: _appMuted(context))),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreferencePanel extends StatelessWidget {
-  const _PreferencePanel();
-
-  @override
-  Widget build(BuildContext context) {
-    return _Panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text('Preference Defaults',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-          SizedBox(height: 18),
-          _PreferenceRow(label: 'Currency', value: 'Indian Rupee (₹)'),
-          _PreferenceRow(label: 'Date Format', value: 'DD MMM YYYY'),
-          _PreferenceRow(label: 'Voucher Prefix', value: 'GL / PV / SI'),
-          _PreferenceRow(
-              label: 'Approval Mode', value: 'Admin review required'),
+          const SizedBox(height: 18),
+          const _PreferenceRow(label: 'Currency', value: 'Indian Rupee (₹)'),
+          const _PreferenceRow(label: 'Date Format', value: 'DD MMM YYYY'),
+          const _PreferenceRow(label: 'Voucher Prefix', value: 'GL / PV / SI'),
+          const _PreferenceRow(
+              label: 'Company GSTIN', value: _SettingsContentState.gstin),
+          const Divider(height: 28),
+          _SwitchPreferenceRow(
+            label: 'Admin Approval Required',
+            value: adminApproval,
+            onChanged: onAdminApprovalChanged,
+          ),
+          _SwitchPreferenceRow(
+            label: 'GST Filing Alerts',
+            value: gstAlerts,
+            onChanged: onGstAlertsChanged,
+          ),
+          _SwitchPreferenceRow(
+            label: 'Overdue Payable Alerts',
+            value: payableAlerts,
+            onChanged: onPayableAlertsChanged,
+          ),
+          _SwitchPreferenceRow(
+            label: 'Monthly Close Alerts',
+            value: monthlyCloseAlerts,
+            onChanged: onMonthlyCloseAlertsChanged,
+          ),
         ],
       ),
     );
@@ -144,7 +348,10 @@ class _PreferenceRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _PreferenceRow({required this.label, required this.value});
+  const _PreferenceRow({
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -184,4 +391,114 @@ class _PreferenceRow extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SwitchPreferenceRow extends StatelessWidget {
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SwitchPreferenceRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      activeThumbColor: _primary,
+      title: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+      subtitle: Text(value ? 'Enabled' : 'Disabled'),
+      value: value,
+      onChanged: onChanged,
+    );
+  }
+}
+
+void _showSettingsSheet(
+  BuildContext context, {
+  required String title,
+  required List<Widget> children,
+}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withAlpha(120),
+    builder: (sheetContext) {
+      final media = MediaQuery.of(sheetContext);
+      final bottomPadding = media.padding.bottom + 16;
+
+      return Padding(
+        padding: EdgeInsets.fromLTRB(14, 0, 14, bottomPadding),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: media.size.height * 0.82,
+              maxWidth: 680,
+            ),
+            child: Material(
+              color: Theme.of(sheetContext).cardColor,
+              elevation: 14,
+              shadowColor: Colors.black.withAlpha(50),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(28),
+                topRight: Radius.circular(28),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 22),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 54,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withAlpha(120),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              color: _primary,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    ...children,
+                    const SizedBox(height: 4),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
 }

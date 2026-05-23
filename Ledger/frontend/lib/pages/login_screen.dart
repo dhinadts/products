@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../services/backend_api.dart';
+import '../services/auth_session.dart';
 import '../state/auth_cubit.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _api = BackendApi();
   bool _obscurePassword = true;
+  bool _rememberMe = AuthSession.rememberMe;
   bool _isSubmitting = false;
   String? _error;
 
@@ -73,6 +75,17 @@ class _LoginScreenState extends State<LoginScreen> {
               border: const OutlineInputBorder(),
             ),
           ),
+          const SizedBox(height: 10),
+          CheckboxListTile(
+            value: _rememberMe,
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            title: const Text('Remember me'),
+            subtitle: const Text('Keep this session active on this device.'),
+            onChanged: _isSubmitting
+                ? null
+                : (value) => setState(() => _rememberMe = value ?? false),
+          ),
         ],
       ),
     );
@@ -95,7 +108,9 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final result = await _api.login(email: email, password: password);
       if (mounted) {
-        context.read<AuthCubit>().authenticate(result);
+        await context
+            .read<AuthCubit>()
+            .authenticate(result, rememberMe: _rememberMe);
         context.go('/dashboard');
       }
     } catch (error) {
@@ -241,7 +256,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         password: password,
       );
       if (mounted) {
-        context.read<AuthCubit>().authenticate(result);
+        await context.read<AuthCubit>().authenticate(result);
         context.go('/dashboard');
       }
     } catch (error) {
