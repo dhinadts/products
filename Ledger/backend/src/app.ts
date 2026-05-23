@@ -15,7 +15,16 @@ import { resolvers } from './graphql/resolvers';
 export async function createApp() {
     const app = express() as express.Application;
 
-    app.use(cors());
+    app.use(cors({
+        origin: [
+            'http://localhost:49663',
+            'http://localhost:57186',
+            'https://dhinadts.github.io',
+            'https://dhinadts.github.io/products',
+            'https://dhinadts.github.io/products/',
+        ],
+        credentials: true,
+    }));
     app.use(bodyParser.json());
     app.get('/api/health', (_req, res) => {
         res.json({ success: true, data: { status: 'ok' } });
