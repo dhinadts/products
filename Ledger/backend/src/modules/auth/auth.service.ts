@@ -51,10 +51,11 @@ export class AuthService {
         }
         const token = this.createToken(user.id, user.role);
         const refreshToken = this.createRefreshToken(user.id, user.role);
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { refreshTokens: { push: refreshToken } },
-        });
+        // Note: Refresh token tracking requires MongoDB replica set, skipping for now
+        // await prisma.user.update({
+        //     where: { id: user.id },
+        //     data: { refreshTokens: { push: refreshToken } },
+        // });
         return { token, refreshToken, user: this.publicUser(user) };
     }
 

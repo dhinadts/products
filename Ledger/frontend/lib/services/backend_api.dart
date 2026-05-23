@@ -187,10 +187,17 @@ class BackendApi {
 
   Future<dynamic> _get(String path) async {
     final uri = Uri.parse('$_baseUrl$path');
-    final response = await _client
-        .get(uri, headers: _headers())
-        .timeout(const Duration(seconds: 5));
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final http.Response response;
+    try {
+      response = await _client
+          .get(uri, headers: _headers())
+          .timeout(const Duration(seconds: 5));
+    } on TimeoutException {
+      throw BackendApiException(_connectionErrorMessage);
+    } on http.ClientException {
+      throw BackendApiException(_connectionErrorMessage);
+    }
+    final body = _decodeResponse(response);
 
     if (response.statusCode >= 400 || body['success'] != true) {
       throw BackendApiException(body['error']?.toString() ?? 'Request failed');
@@ -208,34 +215,40 @@ class BackendApi {
     final headers = _headers();
     final payload = body == null ? null : jsonEncode(body);
 
-    http.Response response;
-    switch (method) {
-      case 'POST':
-        response = await _client
-            .post(uri, headers: headers, body: payload)
-            .timeout(const Duration(seconds: 5));
-        break;
-      case 'PUT':
-        response = await _client
-            .put(uri, headers: headers, body: payload)
-            .timeout(const Duration(seconds: 5));
-        break;
-      case 'PATCH':
-        response = await _client
-            .patch(uri, headers: headers, body: payload)
-            .timeout(const Duration(seconds: 5));
-        break;
-      case 'DELETE':
-        response =
-            await _client.delete(uri).timeout(const Duration(seconds: 5));
-        break;
-      default:
-        throw const BackendApiException('Unsupported request method');
+    late final http.Response response;
+    try {
+      switch (method) {
+        case 'POST':
+          response = await _client
+              .post(uri, headers: headers, body: payload)
+              .timeout(const Duration(seconds: 5));
+          break;
+        case 'PUT':
+          response = await _client
+              .put(uri, headers: headers, body: payload)
+              .timeout(const Duration(seconds: 5));
+          break;
+        case 'PATCH':
+          response = await _client
+              .patch(uri, headers: headers, body: payload)
+              .timeout(const Duration(seconds: 5));
+          break;
+        case 'DELETE':
+          response =
+              await _client.delete(uri).timeout(const Duration(seconds: 5));
+          break;
+        default:
+          throw const BackendApiException('Unsupported request method');
+      }
+    } on TimeoutException {
+      throw BackendApiException(_connectionErrorMessage);
+    } on http.ClientException {
+      throw BackendApiException(_connectionErrorMessage);
     }
 
     final decoded = response.body.isEmpty
         ? <String, dynamic>{'success': response.statusCode < 400}
-        : jsonDecode(response.body) as Map<String, dynamic>;
+        : _decodeResponse(response);
 
     if (response.statusCode >= 400 || decoded['success'] != true) {
       throw BackendApiException(
@@ -255,6 +268,19 @@ class BackendApi {
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
+
+  Map<String, dynamic> _decodeResponse(http.Response response) {
+    try {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } on FormatException {
+      throw BackendApiException(
+        'Unexpected response from backend at $_baseUrl.',
+      );
+    }
+  }
+
+  String get _connectionErrorMessage =>
+      'Cannot reach backend at $_baseUrl. Start the backend server and try again.';
 }
 
 class BackendApiException implements Exception {
