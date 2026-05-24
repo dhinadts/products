@@ -4,49 +4,53 @@ import 'package:balance_sheet_ledger/state/auth_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _api = BackendApi();
+
   bool _obscurePassword = true;
-  bool _rememberMe = false;
+  bool _obscureConfirmPassword = true;
   bool _isSubmitting = false;
+  bool _agreeToTerms = false;
   String? _error;
 
   @override
-  void initState() {
-    super.initState();
-    _loadRememberMePreference();
-  }
-
-  Future<void> _loadRememberMePreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _rememberMe = prefs.getBool('ledger_remember_session') ?? false;
-    });
-  }
-
-  @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
+    final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
 
     // Validation
+    if (name.isEmpty) {
+      setState(() => _error = 'Please enter your full name.');
+      return;
+    }
+
+    if (name.length < 2) {
+      setState(() => _error = 'Name must be at least 2 characters.');
+      return;
+    }
+
     if (email.isEmpty) {
       setState(() => _error = 'Please enter your email address.');
       return;
@@ -58,12 +62,23 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (password.isEmpty) {
-      setState(() => _error = 'Please enter your password.');
+      setState(() => _error = 'Please enter a password.');
       return;
     }
 
     if (password.length < 6) {
       setState(() => _error = 'Password must be at least 6 characters.');
+      return;
+    }
+
+    if (password != confirmPassword) {
+      setState(() => _error = 'Passwords do not match.');
+      return;
+    }
+
+    if (!_agreeToTerms) {
+      setState(() =>
+          _error = 'Please agree to the Terms of Service and Privacy Policy.');
       return;
     }
 
@@ -73,13 +88,15 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final result = await _api.login(email: email, password: password);
+      final result = await _api.register(
+        name: name,
+        email: email,
+        password: password,
+      );
       if (mounted) {
-        // Save the session with remember me preference
-        await AuthSession.save(result, rememberMe: _rememberMe);
-        await context
-            .read<AuthCubit>()
-            .authenticate(result, rememberMe: _rememberMe);
+        // Auto-login after successful registration
+        await AuthSession.save(result, rememberMe: true);
+        await context.read<AuthCubit>().authenticate(result);
         context.go('/dashboard');
       }
     } catch (error) {
@@ -98,18 +115,17 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   String _getUserFriendlyError(String error) {
-    if (error.toLowerCase().contains('invalid credentials') ||
-        error.toLowerCase().contains('invalid email') ||
-        error.toLowerCase().contains('wrong password')) {
-      return 'Invalid email or password. Please try again.';
+    if (error.toLowerCase().contains('email already exists') ||
+        error.toLowerCase().contains('already registered')) {
+      return 'This email is already registered. Please login instead.';
     } else if (error.toLowerCase().contains('network')) {
       return 'Network error. Please check your internet connection.';
     } else if (error.toLowerCase().contains('timeout')) {
       return 'Connection timeout. Please try again.';
-    } else if (error.toLowerCase().contains('user not found')) {
-      return 'No account found with this email address.';
+    } else if (error.toLowerCase().contains('weak password')) {
+      return 'Password is too weak. Please use a stronger password.';
     }
-    return 'Login failed. Please check your credentials and try again.';
+    return 'Registration failed. Please try again.';
   }
 
   @override
@@ -136,8 +152,8 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(theme, isDark, primaryColor),
-            const SizedBox(height: 40),
-            _buildLoginForm(theme, isDark, primaryColor),
+            const SizedBox(height: 30),
+            _buildSignUpForm(theme, isDark, primaryColor),
             const SizedBox(height: 24),
             _buildFooter(theme, isDark, primaryColor),
           ],
@@ -149,15 +165,15 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildTabletLayout(ThemeData theme, bool isDark, Color primaryColor) {
     return Center(
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500),
+        constraints: const BoxConstraints(maxWidth: 550),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(theme, isDark, primaryColor),
-              const SizedBox(height: 48),
-              _buildLoginForm(theme, isDark, primaryColor),
+              const SizedBox(height: 40),
+              _buildSignUpForm(theme, isDark, primaryColor),
               const SizedBox(height: 32),
               _buildFooter(theme, isDark, primaryColor),
             ],
@@ -189,15 +205,15 @@ class _LoginScreenState extends State<LoginScreen> {
           flex: 1,
           child: Center(
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: 520),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(48.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildHeader(theme, isDark, primaryColor),
-                    const SizedBox(height: 48),
-                    _buildLoginForm(theme, isDark, primaryColor),
+                    const SizedBox(height: 40),
+                    _buildSignUpForm(theme, isDark, primaryColor),
                     const SizedBox(height: 32),
                     _buildFooter(theme, isDark, primaryColor),
                   ],
@@ -227,14 +243,14 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             child: Icon(
-              Icons.account_balance_wallet_rounded,
+              Icons.person_add_alt_rounded,
               size: 100,
               color: primaryColor,
             ),
           ),
           const SizedBox(height: 32),
           Text(
-            'Secure Ledger',
+            'Join Ledger',
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
@@ -244,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(
-              'Manage your crypto assets with enterprise-grade security',
+              'Create your account and start managing your crypto assets securely',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
@@ -303,12 +319,12 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLoginForm(ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildSignUpForm(ThemeData theme, bool isDark, Color primaryColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Welcome Back',
+          'Create Account',
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w800,
             fontSize: 32,
@@ -316,7 +332,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Sign in to access your ledger',
+          'Get started with your free account',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
           ),
@@ -348,6 +364,25 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 20),
         ],
 
+        // Name field
+        TextField(
+          controller: _nameController,
+          textInputAction: TextInputAction.next,
+          style: const TextStyle(fontSize: 16),
+          decoration: InputDecoration(
+            labelText: 'Full Name',
+            hintText: 'John Doe',
+            prefixIcon: const Icon(Icons.person_outline, size: 20),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: isDark ? AppThemes._darkPanel : Colors.grey.shade50,
+          ),
+        ),
+        const SizedBox(height: 20),
+
         // Email field
         TextField(
           controller: _emailController,
@@ -372,12 +407,11 @@ class _LoginScreenState extends State<LoginScreen> {
         TextField(
           controller: _passwordController,
           obscureText: _obscurePassword,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _submit(),
+          textInputAction: TextInputAction.next,
           style: const TextStyle(fontSize: 16),
           decoration: InputDecoration(
             labelText: 'Password',
-            hintText: 'Enter your password',
+            hintText: 'Create a strong password',
             prefixIcon: const Icon(Icons.lock_outline, size: 20),
             suffixIcon: IconButton(
               icon: Icon(
@@ -389,6 +423,11 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: () =>
                   setState(() => _obscurePassword = !_obscurePassword),
             ),
+            helperText: 'Minimum 6 characters',
+            helperStyle: TextStyle(
+              fontSize: 12,
+              color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -397,57 +436,91 @@ class _LoginScreenState extends State<LoginScreen> {
             fillColor: isDark ? AppThemes._darkPanel : Colors.grey.shade50,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        // Remember me & Forgot password
+        // Confirm Password field
+        TextField(
+          controller: _confirmPasswordController,
+          obscureText: _obscureConfirmPassword,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _submit(),
+          style: const TextStyle(fontSize: 16),
+          decoration: InputDecoration(
+            labelText: 'Confirm Password',
+            hintText: 'Confirm your password',
+            prefixIcon: const Icon(Icons.verified_user_outlined, size: 20),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscureConfirmPassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                size: 20,
+              ),
+              onPressed: () => setState(
+                  () => _obscureConfirmPassword = !_obscureConfirmPassword),
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: isDark ? AppThemes._darkPanel : Colors.grey.shade50,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Terms and Conditions
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: Checkbox(
-                    value: _rememberMe,
-                    onChanged: (value) async {
-                      setState(() => _rememberMe = value ?? false);
-                      // Save preference immediately
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool(
-                          'ledger_remember_session', value ?? false);
-                    },
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    activeColor: primaryColor,
-                  ),
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: Checkbox(
+                value: _agreeToTerms,
+                onChanged: (value) {
+                  setState(() => _agreeToTerms = value ?? false);
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Remember me',
+                activeColor: primaryColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
                   style: TextStyle(
                     fontSize: 14,
                     color: theme.textTheme.bodySmall?.color?.withOpacity(0.8),
                   ),
+                  children: [
+                    const TextSpan(text: 'I agree to the '),
+                    TextSpan(
+                      text: 'Terms of Service',
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const TextSpan(text: ' and '),
+                    TextSpan(
+                      text: 'Privacy Policy',
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            TextButton(
-              onPressed: () {
-                // Navigate to forgot password screen
-                context.go('/forgot-password');
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: primaryColor,
               ),
-              child: const Text('Forgot password?'),
             ),
           ],
         ),
         const SizedBox(height: 32),
 
-        // Login button
+        // Sign Up button
         SizedBox(
           width: double.infinity,
           height: 56,
@@ -473,7 +546,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       letterSpacing: 1,
                     ),
                   ),
-                  child: const Text('LOGIN'),
+                  child: const Text('CREATE ACCOUNT'),
                 ),
         ),
       ],
@@ -487,18 +560,18 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'New user?',
+              'Already have an account?',
               style: theme.textTheme.bodyMedium,
             ),
             TextButton(
               onPressed: () {
-                context.go('/signup');
+                context.go('/login');
               },
               style: TextButton.styleFrom(
                 foregroundColor: primaryColor,
               ),
               child: const Text(
-                'Create account',
+                'Sign In',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
@@ -572,7 +645,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Your data is encrypted with bank-grade security',
+              'Your information is protected with bank-grade encryption',
               style: TextStyle(
                 fontSize: 12,
                 color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
@@ -585,7 +658,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// Responsive layout helper
+// Responsive layout helper (same as login screen)
 class ResponsiveLayout extends StatelessWidget {
   final Widget mobile;
   final Widget tablet;
@@ -611,7 +684,7 @@ class ResponsiveLayout extends StatelessWidget {
   }
 }
 
-// Theme classes
+// Theme classes (same as login screen)
 class AppThemeController {
   static final ValueNotifier<ThemeMode> themeMode =
       ValueNotifier<ThemeMode>(ThemeMode.light);

@@ -1,40 +1,29 @@
 import 'package:flutter/material.dart';
 
-class AppThemeController {
-  static final ValueNotifier<ThemeMode> themeMode =
-      ValueNotifier<ThemeMode>(ThemeMode.light);
-
-  static void toggleTheme() {
-    themeMode.value =
-        themeMode.value == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-  }
-}
-
 class AppThemes {
-  static const _primary = Color(0xFF145A32);
-  static const _primaryContainer = Color(0xFF0B3D2E);
-  static const _financeGold = Color(0xFFF4C430);
-  static const _lightBackground = Color(0xFFF7F8F1);
-  static const _lightPanel = Colors.white;
-  static const _darkBackground = Color(0xFF0B100D);
-  static const _darkPanel = Color(0xFF141B17);
+  static const primary = Color(0xFF145A32);
+  static const primaryContainer = Color(0xFF0B3D2E);
+  static const financeGold = Color(0xFFF4C430);
+  static const lightBackground = Color(0xFFF7F8F1);
+  static const lightPanel = Colors.white;
+  static const darkBackground = Color(0xFF0B100D);
+  static const darkPanel = Color(0xFF141B17);
 
   static ThemeData get light {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _primary,
+      seedColor: primary,
       brightness: Brightness.light,
-      primary: _primary,
-      surface: _lightPanel,
+      primary: primary,
+      surface: lightPanel,
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: _lightBackground,
-      cardColor: _lightPanel,
+      scaffoldBackgroundColor: lightBackground,
+      cardColor: lightPanel,
       dividerColor: const Color(0xFFC9D5C7),
-      fontFamily: 'Inter',
       inputDecorationTheme: const InputDecorationTheme(
         filled: true,
         fillColor: Color(0xFFF0F4EC),
@@ -42,7 +31,7 @@ class AppThemes {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: _primaryContainer,
+          backgroundColor: primaryContainer,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
@@ -52,18 +41,18 @@ class AppThemes {
 
   static ThemeData get dark {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _financeGold,
+      seedColor: financeGold,
       brightness: Brightness.dark,
-      primary: _financeGold,
-      surface: _darkPanel,
+      primary: financeGold,
+      surface: darkPanel,
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: _darkBackground,
-      cardColor: _darkPanel,
+      scaffoldBackgroundColor: darkBackground,
+      cardColor: darkPanel,
       dividerColor: const Color(0xFF334137),
       fontFamily: 'Inter',
       textTheme: ThemeData.dark().textTheme.apply(
@@ -110,8 +99,8 @@ class AppThemes {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: _financeGold,
-          foregroundColor: _darkBackground,
+          backgroundColor: financeGold,
+          foregroundColor: darkBackground,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
       ),
