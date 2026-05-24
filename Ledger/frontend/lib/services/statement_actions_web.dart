@@ -75,15 +75,15 @@ String _statementHtml(List<LedgerEntry> entries, List<BankBalance> balances) {
   <title>Ledger Statement</title>
   <style>
     body { font-family: Arial, sans-serif; color: #1b1b21; margin: 32px; }
-    h1 { color: #000666; margin: 0 0 4px; }
-    .meta { color: #454652; margin-bottom: 24px; }
+    h1 { color: #145A32; margin: 0 0 4px; }
+    .meta { color: #4C5A4D; margin-bottom: 24px; }
     .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
-    .card { border: 1px solid #c6c5d4; padding: 14px; }
-    .label { font-size: 11px; font-weight: 700; color: #454652; text-transform: uppercase; }
+    .card { border: 1px solid #C9D5C7; padding: 14px; }
+    .label { font-size: 11px; font-weight: 700; color: #4C5A4D; text-transform: uppercase; }
     .value { font-size: 22px; font-weight: 800; margin-top: 8px; }
     table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #c6c5d4; padding: 10px; text-align: left; }
-    th { background: #edeaf3; }
+    th, td { border: 1px solid #C9D5C7; padding: 10px; text-align: left; }
+    th { background: #EAF2E4; }
     .num { text-align: right; }
     @media print { body { margin: 16px; } }
   </style>

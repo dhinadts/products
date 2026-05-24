@@ -280,73 +280,116 @@ class _AuthScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).colorScheme.primary;
-    final size = MediaQuery.sizeOf(context);
-    final compact = size.width < 840;
+    final mediaQuery = MediaQuery.of(context);
+    final keyboardInset = mediaQuery.viewInsets.bottom;
+    final keyboardVisible = keyboardInset > 0;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor:
-          isDark ? const Color(0xFF0F172A) : const Color(0xFFF5F2FB),
+          isDark ? const Color(0xFF0B100D) : const Color(0xFFF7F8F1),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 16 : 48,
-            vertical: compact ? 12 : 28,
-          ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1080),
-              child: compact
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Flexible(
-                          flex: 3,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.center,
-                            child: SizedBox(
-                              width: size.width - 32,
-                              child: _BrandPanel(primary: primary),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Flexible(
-                          flex: 7,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.topCenter,
-                            child: SizedBox(
-                              width: size.width - 32,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 840;
+            final horizontalPadding = compact ? 16.0 : 48.0;
+            final verticalPadding = compact ? 12.0 : 28.0;
+            final viewportHeight =
+                (constraints.maxHeight - (verticalPadding * 2) - keyboardInset)
+                    .clamp(0.0, double.infinity);
+            final shortHeight = viewportHeight < 720;
+            final content = Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1080),
+                child: compact
+                    ? _CompactAuthLayout(
+                        primary: primary,
+                        shortHeight: shortHeight || keyboardVisible,
+                        child: child,
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(child: _BrandPanel(primary: primary)),
+                          const SizedBox(width: 48),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.center,
                               child: child,
                             ),
                           ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(child: _BrandPanel(primary: primary)),
-                        const SizedBox(width: 48),
-                        Expanded(child: child),
-                      ],
-                    ),
-            ),
-          ),
+                        ],
+                      ),
+              ),
+            );
+
+            return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              physics: keyboardVisible
+                  ? const ClampingScrollPhysics()
+                  : const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                verticalPadding,
+                horizontalPadding,
+                verticalPadding + keyboardInset,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: viewportHeight),
+                child: content,
+              ),
+            );
+          },
         ),
       ),
     );
   }
 }
 
+class _CompactAuthLayout extends StatelessWidget {
+  final Color primary;
+  final bool shortHeight;
+  final Widget child;
+
+  const _CompactAuthLayout({
+    required this.primary,
+    required this.shortHeight,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment:
+          shortHeight ? MainAxisAlignment.start : MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _BrandPanel(
+          primary: primary,
+          compact: true,
+          showDescription: !shortHeight,
+        ),
+        SizedBox(height: shortHeight ? 12 : 24),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: child,
+        ),
+      ],
+    );
+  }
+}
+
 class _BrandPanel extends StatelessWidget {
   final Color primary;
+  final bool compact;
+  final bool showDescription;
 
-  const _BrandPanel({required this.primary});
+  const _BrandPanel({
+    required this.primary,
+    this.compact = false,
+    this.showDescription = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -354,8 +397,8 @@ class _BrandPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 58,
-          height: 58,
+          width: compact ? 46 : 58,
+          height: compact ? 46 : 58,
           decoration: BoxDecoration(
             color: primary,
             borderRadius: BorderRadius.circular(8),
@@ -363,27 +406,29 @@ class _BrandPanel extends StatelessWidget {
           child: const Icon(
             Icons.account_balance_wallet_outlined,
             color: Colors.white,
-            size: 30,
+            size: 28,
           ),
         ),
-        const SizedBox(height: 28),
+        SizedBox(height: compact ? 14 : 28),
         Text(
           'DHINADTS LEDGER',
           style: TextStyle(
             color: primary,
-            fontSize: 38,
+            fontSize: compact ? 28 : 38,
             fontWeight: FontWeight.w900,
           ),
         ),
-        const SizedBox(height: 14),
-        Text(
-          'Balance sheet based ledger management for real entries, real totals, and controlled user access.',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 18,
-            height: 1.4,
+        if (showDescription) ...[
+          const SizedBox(height: 14),
+          Text(
+            'Balance sheet based ledger management for real entries, real totals, and controlled user access.',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: compact ? 15 : 18,
+              height: 1.4,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

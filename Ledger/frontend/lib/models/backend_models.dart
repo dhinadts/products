@@ -283,11 +283,11 @@ Color _colorFromApi(String? value, String level) {
 
   switch (level) {
     case 'success':
-      return const Color(0xFF1B6D24);
+      return const Color(0xFF1B7F3A);
     case 'warning':
     case 'error':
       return const Color(0xFFC31318);
     default:
-      return const Color(0xFF000666);
+      return const Color(0xFF145A32);
   }
 }

@@ -24,13 +24,14 @@ part 'notifications_screen.dart';
 part 'help_profile_screen.dart';
 part 'common_widgets.dart';
 
-const _primary = Color(0xFF000666);
-const _primaryContainer = Color(0xFF1A237E);
-const _green = Color(0xFF1B6D24);
+const _primary = Color(0xFF145A32);
+const _primaryContainer = Color(0xFF0B3D2E);
+const _financeGold = Color(0xFFF4C430);
+const _green = Color(0xFF1B7F3A);
 const _red = Color(0xFFC31318);
-const _softSurface = Color(0xFFF5F2FB);
-const _border = Color(0xFFC6C5D4);
-const _muted = Color(0xFF454652);
+const _softSurface = Color(0xFFF0F4EC);
+const _border = Color(0xFFC9D5C7);
+const _muted = Color(0xFF4C5A4D);
 
 final _backendApi = BackendApi();
 final _ledgerEntriesVersion = ValueNotifier<int>(0);
@@ -77,7 +78,7 @@ Color _ledgerStatusColor(String status) {
     case 'On Hold':
       return const Color(0xFFF0B90B);
     case 'To Receive':
-      return const Color(0xFF00B8D4);
+      return const Color(0xFFB7791F);
     default:
       return _muted;
   }
@@ -92,24 +93,24 @@ Color _appBackground(BuildContext context) =>
 Color _appSurface(BuildContext context) => Theme.of(context).cardColor;
 
 Color _appSoftSurface(BuildContext context) =>
-    _isDark(context) ? const Color(0xFF1A2338) : _softSurface;
+    _isDark(context) ? const Color(0xFF1D261F) : _softSurface;
 
 Color _appHeaderSurface(BuildContext context) =>
-    _isDark(context) ? const Color(0xFF202A40) : const Color(0xFFEDEAF3);
+    _isDark(context) ? const Color(0xFF222D24) : const Color(0xFFEAF2E4);
 
 Color _appBorder(BuildContext context) =>
-    _isDark(context) ? const Color(0xFF334155) : _border;
+    _isDark(context) ? const Color(0xFF334137) : _border;
 
 Color _appText(BuildContext context) => Theme.of(context).colorScheme.onSurface;
 
 Color _appMuted(BuildContext context) =>
-    _isDark(context) ? const Color(0xFFB6C2D6) : _muted;
+    _isDark(context) ? const Color(0xFFBECAB9) : _muted;
 
 Color _appAccent(BuildContext context) =>
-    _isDark(context) ? const Color(0xFFBDC2FF) : _primary;
+    _isDark(context) ? _financeGold : _primary;
 
 Color _appActiveNav(BuildContext context) =>
-    _isDark(context) ? const Color(0xFF172044) : const Color(0xFFE4E1F3);
+    _isDark(context) ? const Color(0xFF24331F) : const Color(0xFFDDEDD6);
 
 String _formatDate(DateTime date) {
   const months = [

@@ -809,7 +809,7 @@ class _UserAvatar extends StatelessWidget {
       child: Text(
         initials,
         style: TextStyle(
-          color: _isDark(context) ? const Color(0xFF0B1020) : Colors.white,
+          color: _isDark(context) ? const Color(0xFF0B100D) : Colors.white,
           fontWeight: FontWeight.w900,
           fontSize: radius * 0.72,
         ),

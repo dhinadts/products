@@ -118,7 +118,7 @@ class _ProfileContent extends StatelessWidget {
                               style: IconButton.styleFrom(
                                 backgroundColor: _appAccent(context),
                                 foregroundColor: _isDark(context)
-                                    ? const Color(0xFF0B1020)
+                                    ? const Color(0xFF0B100D)
                                     : Colors.white,
                                 minimumSize: const Size(34, 34),
                               ),
