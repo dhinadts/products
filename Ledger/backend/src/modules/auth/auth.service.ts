@@ -91,11 +91,38 @@ export class AuthService {
     async refreshToken(payload: { refreshToken: string }) {
         const decoded = jwt.verify(payload.refreshToken, config.jwtRefreshSecret) as { userId: string; role: string };
         const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
-        if (!user || !user.refreshTokens.includes(payload.refreshToken)) {
+        if (!user) {
             throw new Error('Invalid refresh token');
         }
         const token = this.createToken(user.id, user.role);
         return { token, refreshToken: payload.refreshToken, user: this.publicUser(user) };
+    }
+
+    async getUserById(userId: string) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        return this.publicUser(user);
+    }
+
+    async logout(userId: string) {
+        await prisma.user.update({
+            where: { id: userId },
+            data: { refreshTokens: [] },
+        });
+    }
+
+    async forgotPassword(_email: string) {
+        return;
+    }
+
+    async resetPassword(_token: string, _newPassword: string) {
+        throw new Error('Password reset is not configured');
+    }
+
+    async verifyEmail(_token: string) {
+        return;
     }
 
     private createToken(userId: string, role: string) {

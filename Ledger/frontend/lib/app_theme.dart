@@ -1,5 +1,15 @@
 import 'package:flutter/material.dart';
 
+class AppThemeController {
+  static final ValueNotifier<ThemeMode> themeMode =
+      ValueNotifier<ThemeMode>(ThemeMode.light);
+
+  static void toggleTheme() {
+    themeMode.value =
+        themeMode.value == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+  }
+}
+
 class AppThemes {
   static const primary = Color(0xFF145A32);
   static const primaryContainer = Color(0xFF0B3D2E);

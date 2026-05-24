@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/backend_models.dart';
@@ -10,6 +11,7 @@ class AuthSession {
 
   static AuthResult? _current;
   static bool _rememberMe = false;
+  static final ValueNotifier<int> revision = ValueNotifier<int>(0);
 
   static AuthResult? get current => _current;
   static String? get token => _current?.token;
@@ -21,12 +23,14 @@ class AuthSession {
     _rememberMe = prefs.getBool(_rememberKey) ?? false;
     if (!_rememberMe) {
       _current = null;
+      _notifyChanged();
       return;
     }
 
     final rawSession = prefs.getString(_sessionKey);
     if (rawSession == null || rawSession.isEmpty) {
       _current = null;
+      _notifyChanged();
       return;
     }
 
@@ -38,6 +42,7 @@ class AuthSession {
       _current = null;
       await prefs.remove(_sessionKey);
     }
+    _notifyChanged();
   }
 
   static Future<void> save(AuthResult result,
@@ -53,6 +58,7 @@ class AuthSession {
     } else {
       await prefs.remove(_sessionKey);
     }
+    _notifyChanged();
   }
 
   static Future<void> clear() async {
@@ -61,5 +67,10 @@ class AuthSession {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_sessionKey);
     await prefs.setBool(_rememberKey, false);
+    _notifyChanged();
+  }
+
+  static void _notifyChanged() {
+    revision.value++;
   }
 }

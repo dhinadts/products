@@ -9,6 +9,7 @@ import 'services/auth_session.dart';
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   debugLogDiagnostics: true,
+  refreshListenable: AuthSession.revision,
   redirect: (BuildContext context, GoRouterState state) {
     final path = state.location;
     final isAuthRoute = path == '/' || path == '/login' || path == '/signup';

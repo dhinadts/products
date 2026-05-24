@@ -1,10 +1,11 @@
-import 'package:balance_sheet_ledger/services/auth_session.dart';
 import 'package:balance_sheet_ledger/services/backend_api.dart';
 import 'package:balance_sheet_ledger/state/auth_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -75,8 +76,6 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final result = await _api.login(email: email, password: password);
       if (mounted) {
-        // Save the session with remember me preference
-        await AuthSession.save(result, rememberMe: _rememberMe);
         await context
             .read<AuthCubit>()
             .authenticate(result, rememberMe: _rememberMe);
@@ -116,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = isDark ? AppThemes._financeGold : AppThemes._primary;
+    final primaryColor = isDark ? AppThemes.financeGold : AppThemes.primary;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -270,13 +269,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 gradient: LinearGradient(
                   colors: isDark
                       ? [primaryColor, primaryColor.withOpacity(0.7)]
-                      : [AppThemes._primary, AppThemes._primaryContainer],
+                      : [AppThemes.primary, AppThemes.primaryContainer],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.account_balance_wallet_rounded,
-                color: isDark ? AppThemes._darkBackground : Colors.white,
+                color: isDark ? AppThemes.darkBackground : Colors.white,
                 size: 24,
               ),
             ),
@@ -287,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 2,
-                color: isDark ? primaryColor : AppThemes._primary,
+                color: isDark ? primaryColor : AppThemes.primary,
               ),
             ),
           ],
@@ -363,7 +362,7 @@ class _LoginScreenState extends State<LoginScreen> {
               borderSide: BorderSide.none,
             ),
             filled: true,
-            fillColor: isDark ? AppThemes._darkPanel : Colors.grey.shade50,
+            fillColor: isDark ? AppThemes.darkPanel : Colors.grey.shade50,
           ),
         ),
         const SizedBox(height: 20),
@@ -394,7 +393,7 @@ class _LoginScreenState extends State<LoginScreen> {
               borderSide: BorderSide.none,
             ),
             filled: true,
-            fillColor: isDark ? AppThemes._darkPanel : Colors.grey.shade50,
+            fillColor: isDark ? AppThemes.darkPanel : Colors.grey.shade50,
           ),
         ),
         const SizedBox(height: 16),
@@ -462,7 +461,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
                     foregroundColor:
-                        isDark ? AppThemes._darkBackground : Colors.white,
+                        isDark ? AppThemes.darkBackground : Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -559,7 +558,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppThemes._darkPanel : Colors.grey.shade50,
+        color: isDark ? AppThemes.darkPanel : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -608,114 +607,5 @@ class ResponsiveLayout extends StatelessWidget {
     } else {
       return mobile;
     }
-  }
-}
-
-// Theme classes
-class AppThemeController {
-  static final ValueNotifier<ThemeMode> themeMode =
-      ValueNotifier<ThemeMode>(ThemeMode.light);
-
-  static void toggleTheme() {
-    themeMode.value =
-        themeMode.value == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-  }
-}
-
-class AppThemes {
-  static const _primary = Color(0xFF145A32);
-  static const _primaryContainer = Color(0xFF0B3D2E);
-  static const _financeGold = Color(0xFFF4C430);
-  static const _lightBackground = Color(0xFFF7F8F1);
-  static const _lightPanel = Colors.white;
-  static const _darkBackground = Color(0xFF0B100D);
-  static const _darkPanel = Color(0xFF141B17);
-
-  static ThemeData get light {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: _primary,
-      brightness: Brightness.light,
-      primary: _primary,
-      surface: _lightPanel,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme: colorScheme,
-      scaffoldBackgroundColor: _lightBackground,
-      cardColor: _lightPanel,
-      dividerColor: const Color(0xFFC9D5C7),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: _primary, width: 1.5),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-    );
-  }
-
-  static ThemeData get dark {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: _financeGold,
-      brightness: Brightness.dark,
-      primary: _financeGold,
-      surface: _darkPanel,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: colorScheme,
-      scaffoldBackgroundColor: _darkBackground,
-      cardColor: _darkPanel,
-      dividerColor: const Color(0xFF334137),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: _darkPanel,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: _financeGold, width: 1.5),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _financeGold,
-          foregroundColor: _darkBackground,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-    );
   }
 }

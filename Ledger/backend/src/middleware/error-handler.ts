@@ -2,9 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 
 export function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
     console.error(err);
-    res.status(500).json({
+    const status = err.message === 'Invalid credentials' ||
+        err.message === 'Email already registered' ||
+        err.message === 'Invalid refresh token'
+        ? 401
+        : 500;
+    res.status(status).json({
         success: false,
-        message: 'Internal Server Error',
+        message: status === 500 ? 'Internal Server Error' : err.message,
         error: err.message,
     });
 }
