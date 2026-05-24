@@ -17,6 +17,7 @@ const allowedProductionOrigins = new Set([
   "https://dhinadts.github.io",
   "https://dhinadts.github.io/products",
   "https://dhinadts.github.io/products/",
+  "*",
 ]);
 
 function isAllowedOrigin(origin?: string) {
@@ -36,6 +37,11 @@ function isAllowedOrigin(origin?: string) {
     );
   } catch {
     return false;
+  }finally {
+    console.log(`CORS check for origin: ${origin}, allowed: ${
+      isAllowedOrigin(origin)
+    }`);
+    console.log(process.env.MONGO_URI);
   }
 }
 

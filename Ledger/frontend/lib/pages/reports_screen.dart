@@ -448,7 +448,7 @@ class _ReportMetricCards extends StatelessWidget {
           label: 'GST PAYABLE',
           value: _formatCurrency(
               (report.gstOutput - report.gstInput).clamp(0, double.infinity)),
-          color: _primary,
+          color: _appAccent(context),
           note: 'Output GST - Input GST',
           icon: Icons.receipt_long_outlined,
         ),
@@ -475,12 +475,12 @@ class _AccountBarChart extends StatelessWidget {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
-          const Wrap(
+          Wrap(
             spacing: 16,
             children: [
-              _Legend(color: _green, label: 'Revenue'),
-              _Legend(color: _red, label: 'Expense'),
-              _Legend(color: _primary, label: 'Receivable'),
+              const _Legend(color: _green, label: 'Revenue'),
+              const _Legend(color: _red, label: 'Expense'),
+              _Legend(color: _appAccent(context), label: 'Receivable'),
             ],
           ),
           const SizedBox(height: 24),
@@ -570,7 +570,7 @@ class _AccountBarChart extends StatelessWidget {
                         BarChartRodData(
                           toY: account.receivable,
                           width: 10,
-                          color: _primary,
+                          color: _appAccent(context),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ],
@@ -704,7 +704,7 @@ class _GstComplianceCard extends StatelessWidget {
             icon: Icons.payments_outlined,
             title: 'Input GST',
             subtitle: _formatCurrency(report.gstInput),
-            color: _primary,
+            color: _appAccent(context),
           ),
           _ComplianceTile(
             icon: gstPayable >= 0

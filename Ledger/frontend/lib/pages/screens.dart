@@ -1,5 +1,7 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_const_declarations
 
+import 'dart:async';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,11 +30,11 @@ const _green = Color(0xFF1B6D24);
 const _red = Color(0xFFC31318);
 const _softSurface = Color(0xFFF5F2FB);
 const _border = Color(0xFFC6C5D4);
-const _text = Color(0xFF1B1B21);
 const _muted = Color(0xFF454652);
 
 final _backendApi = BackendApi();
 final _ledgerEntriesVersion = ValueNotifier<int>(0);
+final _appSearchQuery = ValueNotifier<String>('');
 
 String _normalizeLedgerStatus(String status) {
   final value = status.trim().toLowerCase();
@@ -102,6 +104,9 @@ Color _appText(BuildContext context) => Theme.of(context).colorScheme.onSurface;
 
 Color _appMuted(BuildContext context) =>
     _isDark(context) ? const Color(0xFFB6C2D6) : _muted;
+
+Color _appAccent(BuildContext context) =>
+    _isDark(context) ? const Color(0xFFBDC2FF) : _primary;
 
 Color _appActiveNav(BuildContext context) =>
     _isDark(context) ? const Color(0xFF172044) : const Color(0xFFE4E1F3);
@@ -273,9 +278,9 @@ class _TwoLineText extends StatelessWidget {
               children: [
                 Expanded(
                     child: Text(title,
-                        style: const TextStyle(color: _primary, fontSize: 18))),
+                        style: const TextStyle(color: _appAccent(context), fontSize: 18))),
                 const Text('AMOUNT (₹)',
-                    style: TextStyle(color: _primary, fontSize: 18)),
+                    style: TextStyle(color: _appAccent(context), fontSize: 18)),
               ],
             ),
           ),
@@ -287,7 +292,7 @@ class _TwoLineText extends StatelessWidget {
                 children: [
                   Text(section.title,
                       style: const TextStyle(
-                          color: _primary, fontWeight: FontWeight.w800)),
+                          color: _appAccent(context), fontWeight: FontWeight.w800)),
                   const SizedBox(height: 14),
                   ...section.rows.map(
                     (row) => Padding(

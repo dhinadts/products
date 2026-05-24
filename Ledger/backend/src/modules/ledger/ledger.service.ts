@@ -1,3 +1,4 @@
+import type { LedgerEntry } from "@prisma/client";
 import { prisma } from "../../prisma";
 
 interface LedgerEntryPayload {
@@ -12,10 +13,29 @@ interface LedgerEntryPayload {
 }
 
 export class LedgerService {
-  async listEntries() {
-    return prisma.ledgerEntry.findMany({
+  async listEntries(search?: string) {
+    const entries = await prisma.ledgerEntry.findMany({
       orderBy: { date: "desc" },
     });
+
+    const query = search?.trim().toLowerCase();
+    if (!query) {
+      return entries;
+    }
+
+    return entries.filter((entry: LedgerEntry) =>
+      [
+        entry.particulars,
+        entry.ledgerRef,
+        entry.status,
+        entry.debit.toString(),
+        entry.credit.toString(),
+        ...entry.tags,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query),
+    );
   }
 
   async createEntry(entry: LedgerEntryPayload) {

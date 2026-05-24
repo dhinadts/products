@@ -147,7 +147,7 @@ class _MovableFloatingButton extends StatelessWidget {
       onPanUpdate: (details) => onDragUpdate(details.delta),
       child: FloatingActionButton(
         tooltip: 'Drag or tap',
-        backgroundColor: _primary,
+        backgroundColor: _appAccent(context),
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -236,12 +236,17 @@ class _TopBar extends StatelessWidget {
                   'Dhinadts IT Solutions & Services',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _primary,
+                  style: TextStyle(
+                    color: _appAccent(context),
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
+              ),
+              IconButton(
+                tooltip: 'Search',
+                icon: Icon(Icons.search, color: _appText(context)),
+                onPressed: () => _showSearchDialog(context, searchHint),
               ),
               IconButton(
                 tooltip: _isDark(context)
@@ -321,7 +326,7 @@ class _TopBar extends StatelessWidget {
                     "DHINADTS IT SOLUTIONS AND SUPPORT (OPC) PRIVATE LIMITED",
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: _primary,
+                      color: _appAccent(context),
                       fontSize: isCompact ? 19 : 26,
                       fontWeight: FontWeight.w800,
                     ),
@@ -368,10 +373,9 @@ class _TopBar extends StatelessWidget {
             InkWell(
               borderRadius: BorderRadius.circular(18),
               onTap: () => context.go('/profile'),
-              child: const CircleAvatar(
-                radius: 18,
-                backgroundColor: _primary,
-                child: Icon(Icons.person, color: Colors.white),
+              child: BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) =>
+                    _UserAvatar(user: state.user, radius: 18),
               ),
             ),
           ],
@@ -381,10 +385,32 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-class _SearchBox extends StatelessWidget {
+class _SearchBox extends StatefulWidget {
   final String hint;
 
   const _SearchBox({required this.hint});
+
+  @override
+  State<_SearchBox> createState() => _SearchBoxState();
+}
+
+class _SearchBoxState extends State<_SearchBox> {
+  final TextEditingController _controller = TextEditingController();
+  Timer? _debounce;
+  Future<List<LedgerEntry>>? _resultsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.text = _appSearchQuery.value;
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -392,9 +418,38 @@ class _SearchBox extends StatelessWidget {
       width: 320,
       height: 44,
       child: TextField(
+        controller: _controller,
+        style: TextStyle(color: _appText(context)),
+        textInputAction: TextInputAction.search,
+        onSubmitted: (value) {
+          _runSearch(value);
+          _showSearchResults(context);
+        },
+        onChanged: (value) {
+          _appSearchQuery.value = value;
+          setState(() {});
+          _debounce?.cancel();
+          _debounce = Timer(const Duration(milliseconds: 350), () {
+            if (mounted) {
+              _runSearch(value);
+            }
+          });
+        },
         decoration: InputDecoration(
-          hintText: hint,
-          prefixIcon: const Icon(Icons.search),
+          hintText: widget.hint,
+          hintStyle: TextStyle(color: _appMuted(context)),
+          prefixIcon: Icon(Icons.search, color: _appMuted(context)),
+          suffixIcon: _controller.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: 'Clear search',
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    _controller.clear();
+                    _appSearchQuery.value = '';
+                    setState(() => _resultsFuture = null);
+                  },
+                ),
           filled: true,
           fillColor: _appSoftSurface(context),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12),
@@ -407,7 +462,218 @@ class _SearchBox extends StatelessWidget {
             borderSide: BorderSide(color: _appBorder(context)),
           ),
         ),
+        onTap: () {
+          if (_controller.text.trim().isNotEmpty) {
+            _showSearchResults(context);
+          }
+        },
       ),
+    );
+  }
+
+  void _runSearch(String value) {
+    final query = value.trim();
+    _appSearchQuery.value = query;
+    setState(() {
+      _resultsFuture =
+          query.isEmpty ? null : _backendApi.searchLedgerEntries(query);
+    });
+  }
+
+  void _showSearchResults(BuildContext context) {
+    final resultsFuture = _resultsFuture;
+    if (resultsFuture == null) {
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      builder: (context) => _SearchResultsDialog(
+        query: _controller.text.trim(),
+        resultsFuture: resultsFuture,
+      ),
+    );
+  }
+}
+
+void _showSearchDialog(BuildContext context, String hint) {
+  showDialog<void>(
+    context: context,
+    builder: (context) => _CompactSearchDialog(hint: hint),
+  );
+}
+
+class _CompactSearchDialog extends StatefulWidget {
+  final String hint;
+
+  const _CompactSearchDialog({required this.hint});
+
+  @override
+  State<_CompactSearchDialog> createState() => _CompactSearchDialogState();
+}
+
+class _CompactSearchDialogState extends State<_CompactSearchDialog> {
+  final TextEditingController _controller = TextEditingController();
+  Future<List<LedgerEntry>>? _resultsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.text = _appSearchQuery.value;
+    if (_controller.text.trim().isNotEmpty) {
+      _resultsFuture = _backendApi.searchLedgerEntries(_controller.text.trim());
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Search transactions'),
+      content: SizedBox(
+        width: 520,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: widget.hint,
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                _appSearchQuery.value = value.trim();
+                setState(() {
+                  _resultsFuture = value.trim().isEmpty
+                      ? null
+                      : _backendApi.searchLedgerEntries(value.trim());
+                });
+              },
+            ),
+            const SizedBox(height: 14),
+            _SearchResultsList(
+              query: _controller.text.trim(),
+              resultsFuture: _resultsFuture,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchResultsDialog extends StatelessWidget {
+  final String query;
+  final Future<List<LedgerEntry>> resultsFuture;
+
+  const _SearchResultsDialog({
+    required this.query,
+    required this.resultsFuture,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Search results for "$query"'),
+      content: SizedBox(
+        width: 560,
+        child: _SearchResultsList(
+          query: query,
+          resultsFuture: resultsFuture,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+        FilledButton.icon(
+          onPressed: () {
+            Navigator.pop(context);
+            context.go('/ledger');
+          },
+          icon: const Icon(Icons.menu_book_outlined),
+          label: const Text('Open Ledger'),
+        ),
+      ],
+    );
+  }
+}
+
+class _SearchResultsList extends StatelessWidget {
+  final String query;
+  final Future<List<LedgerEntry>>? resultsFuture;
+
+  const _SearchResultsList({
+    required this.query,
+    required this.resultsFuture,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (query.isEmpty || resultsFuture == null) {
+      return _EmptyPanelMessage(
+        icon: Icons.search,
+        title: 'Search ledger transactions',
+        subtitle: 'Search particulars, account references, status, or tags.',
+      );
+    }
+
+    return FutureBuilder<List<LedgerEntry>>(
+      future: resultsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 120,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final results = snapshot.data ?? const <LedgerEntry>[];
+        if (results.isEmpty) {
+          return _EmptyPanelMessage(
+            icon: Icons.search_off,
+            title: 'No matching transactions',
+            subtitle:
+                'Try searching another account, voucher, amount, or status.',
+          );
+        }
+
+        return SizedBox(
+          height: 320,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: results.length,
+            separatorBuilder: (_, __) => Divider(color: _appBorder(context)),
+            itemBuilder: (context, index) {
+              final entry = results[index];
+              final amount = entry.debit > 0 ? entry.debit : entry.credit;
+              return ListTile(
+                leading: Icon(
+                  entry.debit > 0
+                      ? Icons.south_west_outlined
+                      : Icons.north_east_outlined,
+                  color: entry.debit > 0 ? _green : _red,
+                ),
+                title: Text(entry.particulars),
+                subtitle: Text('${entry.ledgerRef} • ${entry.status}'),
+                trailing: Text(_formatCurrency(amount)),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.go('/ledger');
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -432,10 +698,10 @@ class _SideNav extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'DHINADTS OPC',
                       style: TextStyle(
-                        color: _primary,
+                        color: _appAccent(context),
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
                       ),
@@ -489,10 +755,16 @@ class _SideNav extends StatelessWidget {
                   ),
                   onPressed: () =>
                       _showAppFlowModal(context, _AppFlowModalType.ledgerEntry),
-                  icon: const Icon(Icons.add),
-                  label: const Text(
+                  icon: Icon(
+                    Icons.add,
+                    color: _appAccent(context),
+                  ),
+                  label: Text(
                     'Add Entry',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                    style: TextStyle(
+                        color: _appAccent(context),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800),
                   ),
                 ),
               ),
@@ -500,24 +772,7 @@ class _SideNav extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 child: Row(
                   children: [
-                    const CircleAvatar(child: Icon(Icons.person)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Company not configured',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            'ADMIN SESSION',
-                            style: TextStyle(
-                                color: _appMuted(context), fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
+                    Expanded(child: _CompanySetupStatus()),
                   ],
                 ),
               ),
@@ -527,6 +782,165 @@ class _SideNav extends StatelessWidget {
       ),
     );
   }
+}
+
+class _UserAvatar extends StatelessWidget {
+  final AuthUser? user;
+  final double radius;
+
+  const _UserAvatar({required this.user, required this.radius});
+
+  @override
+  Widget build(BuildContext context) {
+    final photoUrl = user?.photoUrl.trim() ?? '';
+    final initials = _userInitials(user);
+
+    if (photoUrl.isNotEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: _appSoftSurface(context),
+        backgroundImage: NetworkImage(photoUrl),
+      );
+    }
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: _appAccent(context),
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: _isDark(context) ? const Color(0xFF0B1020) : Colors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: radius * 0.72,
+        ),
+      ),
+    );
+  }
+}
+
+String _userInitials(AuthUser? user) {
+  final first = user?.firstName.trim() ?? '';
+  final last = user?.lastName.trim() ?? '';
+  if (first.isNotEmpty || last.isNotEmpty) {
+    return '${first.isNotEmpty ? first[0] : ''}${last.isNotEmpty ? last[0] : ''}'
+        .toUpperCase();
+  }
+
+  final name = user?.name.trim() ?? '';
+  if (name.isEmpty) {
+    return 'U';
+  }
+  final parts = name.split(RegExp(r'\s+'));
+  return parts
+      .take(2)
+      .map((part) => part.isEmpty ? '' : part[0])
+      .join()
+      .toUpperCase();
+}
+
+class _CompanySetupStatus extends StatelessWidget {
+  const _CompanySetupStatus();
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message:
+          'Company setup pending: add GSTIN, PAN, bank proof, address proof, and fiscal year.',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(6),
+        onTap: () => _showCompanySetupDialog(context),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: _red.withAlpha(24),
+              child: Icon(Icons.business_outlined, color: _red),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Company not configured',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _appText(context),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    'Pending documents',
+                    style: TextStyle(color: _appMuted(context), fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.info_outline, color: _appMuted(context), size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+void _showCompanySetupDialog(BuildContext context) {
+  const documents = [
+    _CompanyDocument('GST Certificate', 'Pending'),
+    _CompanyDocument('PAN Card', 'Pending'),
+    _CompanyDocument('Bank Account Proof', 'Pending'),
+    _CompanyDocument('Registered Address Proof', 'Pending'),
+    _CompanyDocument('Fiscal Year & Opening Balance', 'Pending'),
+  ];
+
+  showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Configure Company'),
+      content: SizedBox(
+        width: 520,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add the required company documents to unlock GST, reports, and audit-ready ledger setup.',
+              style: TextStyle(color: _appMuted(context)),
+            ),
+            const SizedBox(height: 16),
+            ...documents.map(
+              (document) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.pending_actions, color: _red),
+                title: Text(document.name),
+                trailing: _Chip(label: document.status, color: _red),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Later'),
+        ),
+        FilledButton.icon(
+          onPressed: () {
+            Navigator.pop(context);
+            context.go('/settings');
+          },
+          icon: const Icon(Icons.settings_outlined),
+          label: const Text('Open Settings'),
+        ),
+      ],
+    ),
+  );
+}
+
+class _CompanyDocument {
+  final String name;
+  final String status;
+
+  const _CompanyDocument(this.name, this.status);
 }
 
 class _TabletNavigationRail extends StatelessWidget {
@@ -554,8 +968,8 @@ class _TabletNavigationRail extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 18),
-            const Icon(Icons.account_balance_wallet_outlined,
-                color: _primary, size: 30),
+            Icon(Icons.account_balance_wallet_outlined,
+                color: _appAccent(context), size: 30),
             const SizedBox(height: 26),
             ...items.map(
               (item) => Tooltip(
@@ -566,7 +980,7 @@ class _TabletNavigationRail extends StatelessWidget {
                         ? _appActiveNav(context)
                         : Colors.transparent,
                     foregroundColor: activeRoute == item.route
-                        ? _primary
+                        ? _appAccent(context)
                         : _appText(context),
                     minimumSize: const Size(52, 52),
                   ),
@@ -1415,14 +1829,14 @@ class _NavItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: active ? _primary : _appText(context)),
+            Icon(icon, color: active ? _appAccent(context) : _appText(context)),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: active ? _primary : _appText(context),
+                  color: active ? _appAccent(context) : _appText(context),
                   fontSize: 18,
                   fontWeight: active ? FontWeight.w800 : FontWeight.w500,
                 ),

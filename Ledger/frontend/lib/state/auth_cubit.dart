@@ -27,6 +27,21 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthState(result: result));
   }
 
+  Future<void> updateUser(AuthUser user) async {
+    final current = state.result;
+    if (current == null) {
+      return;
+    }
+
+    final updated = AuthResult(
+      token: current.token,
+      refreshToken: current.refreshToken,
+      user: user,
+    );
+    await AuthSession.save(updated, rememberMe: AuthSession.rememberMe);
+    emit(AuthState(result: updated));
+  }
+
   Future<void> logout() async {
     await AuthSession.clear();
     emit(const AuthState());

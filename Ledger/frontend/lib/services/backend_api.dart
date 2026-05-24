@@ -61,8 +61,45 @@ class BackendApi {
     return AuthResult.fromJson(data as Map<String, dynamic>);
   }
 
+  Future<AuthUser> updateProfile({
+    required String firstName,
+    required String lastName,
+    required String photoUrl,
+  }) async {
+    final displayName = [firstName.trim(), lastName.trim()]
+        .where((part) => part.isNotEmpty)
+        .join(' ');
+    final data = await _send(
+      'PATCH',
+      '/api/auth/profile',
+      body: {
+        'firstName': firstName.trim(),
+        'lastName': lastName.trim(),
+        'name': displayName,
+        'photoUrl': photoUrl.trim().isEmpty ? null : photoUrl.trim(),
+      },
+    );
+    return AuthUser.fromJson(data as Map<String, dynamic>? ?? {});
+  }
+
   Future<List<LedgerEntry>> fetchLedgerEntries() async {
     final data = await _get('/api/ledger');
+    final entries = data as List<dynamic>? ?? const [];
+    return entries
+        .whereType<Map<String, dynamic>>()
+        .map(LedgerEntry.fromJson)
+        .toList();
+  }
+
+  Future<List<LedgerEntry>> searchLedgerEntries(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      return const [];
+    }
+
+    final data = await _get(
+      '/api/ledger?search=${Uri.encodeQueryComponent(trimmed)}',
+    );
     final entries = data as List<dynamic>? ?? const [];
     return entries
         .whereType<Map<String, dynamic>>()

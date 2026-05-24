@@ -60,6 +60,8 @@ class _HelpContent extends StatelessWidget {
           ],
         ),
         SizedBox(height: 24),
+        _LedgerHelpSection(),
+        SizedBox(height: 24),
         _SupportPanel(),
       ],
     );
@@ -104,10 +106,32 @@ class _ProfileContent extends StatelessWidget {
                   final profileDetails = Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 34,
-                        backgroundColor: Color(0xFFE4E1EA),
-                        child: Icon(Icons.person, color: _primary, size: 34),
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          _UserAvatar(user: user, radius: 38),
+                          Positioned(
+                            right: -6,
+                            bottom: -6,
+                            child: IconButton.filled(
+                              tooltip: 'Update photo',
+                              style: IconButton.styleFrom(
+                                backgroundColor: _appAccent(context),
+                                foregroundColor: _isDark(context)
+                                    ? const Color(0xFF0B1020)
+                                    : Colors.white,
+                                minimumSize: const Size(34, 34),
+                              ),
+                              onPressed: state.isAuthenticated
+                                  ? () => _showProfilePhotoEditor(
+                                        context,
+                                        user,
+                                      )
+                                  : null,
+                              icon: const Icon(Icons.edit, size: 18),
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(width: 20),
                       Expanded(
@@ -184,7 +208,7 @@ class _ProfileContent extends StatelessWidget {
                 _MetricCard(
                   label: 'OPEN APPROVALS',
                   value: '0',
-                  color: _primary,
+                  color: _appAccent(context),
                   note: 'No approvals yet',
                 ),
                 _MetricCard(
@@ -196,7 +220,7 @@ class _ProfileContent extends StatelessWidget {
                 _MetricCard(
                   label: 'AUDIT EVENTS',
                   value: '0',
-                  color: _primary,
+                  color: _appAccent(context),
                   note: 'No audit events yet',
                 ),
               ],
@@ -206,6 +230,201 @@ class _ProfileContent extends StatelessWidget {
       },
     );
   }
+}
+
+class _LedgerHelpSection extends StatelessWidget {
+  const _LedgerHelpSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.menu_book_outlined, color: _appAccent(context)),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'About Ledger',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Ledger is the transaction book for the company. It records each debit and credit with account reference, voucher details, date, status, and supporting tags so bank balances, receivables, payables, reports, and balance sheet figures stay aligned.',
+            style: TextStyle(color: _appText(context), fontSize: 16),
+          ),
+          const SizedBox(height: 18),
+          _ResponsiveGrid(
+            minTileWidth: 260,
+            children: const [
+              _LedgerHelpPoint(
+                icon: Icons.add_circle_outline,
+                title: 'Add Entries',
+                description:
+                    'Use Add Entry to create receipt, payment, journal, sales, or purchase transactions.',
+              ),
+              _LedgerHelpPoint(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'Track Accounts',
+                description:
+                    'Select linked bank accounts to compare opening balance, received debit, paid credit, receivable, and payable.',
+              ),
+              _LedgerHelpPoint(
+                icon: Icons.filter_alt_outlined,
+                title: 'Filter & Search',
+                description:
+                    'Filter by date or account, and use the header search to find transactions from any screen.',
+              ),
+              _LedgerHelpPoint(
+                icon: Icons.verified_outlined,
+                title: 'Reconcile Status',
+                description:
+                    'Use Received, To Receive, Paid, Unpaid, and On Hold statuses to keep pending items visible.',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LedgerHelpPoint extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _LedgerHelpPoint({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: _appAccent(context)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+              const SizedBox(height: 4),
+              Text(description, style: TextStyle(color: _appMuted(context))),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+void _showProfilePhotoEditor(BuildContext context, AuthUser? user) {
+  if (user == null) {
+    return;
+  }
+
+  final firstNameController = TextEditingController(text: user.firstName);
+  final lastNameController = TextEditingController(text: user.lastName);
+  final photoUrlController = TextEditingController(text: user.photoUrl);
+  var saving = false;
+
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('Edit Profile Photo'),
+        content: SizedBox(
+          width: 480,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: firstNameController,
+                decoration: const InputDecoration(
+                  labelText: 'First name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: lastNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Last name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: photoUrlController,
+                decoration: const InputDecoration(
+                  labelText: 'Photo URL',
+                  helperText: 'Leave empty to show initials.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: saving ? null : () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            onPressed: saving
+                ? null
+                : () async {
+                    setState(() => saving = true);
+                    final messenger = ScaffoldMessenger.of(context);
+                    try {
+                      final updated = await _backendApi.updateProfile(
+                        firstName: firstNameController.text,
+                        lastName: lastNameController.text,
+                        photoUrl: photoUrlController.text,
+                      );
+                      await context.read<AuthCubit>().updateUser(updated);
+                      if (context.mounted) {
+                        Navigator.pop(dialogContext);
+                        messenger.showSnackBar(
+                          const SnackBar(content: Text('Profile updated.')),
+                        );
+                      }
+                    } catch (error) {
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(error.toString())),
+                      );
+                    } finally {
+                      if (context.mounted) {
+                        setState(() => saving = false);
+                      }
+                    }
+                  },
+            icon: saving
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.save_outlined),
+            label: Text(saving ? 'Saving...' : 'Save'),
+          ),
+        ],
+      ),
+    ),
+  ).then((_) {
+    firstNameController.dispose();
+    lastNameController.dispose();
+    photoUrlController.dispose();
+  });
 }
 
 class _HelpCard extends StatelessWidget {
@@ -225,7 +444,7 @@ class _HelpCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: _primary, size: 30),
+          Icon(icon, color: _appAccent(context), size: 30),
           const SizedBox(height: 16),
           Text(title,
               style:

@@ -11,6 +11,7 @@ createApp()
         app.listen(port, () => {
             console.log(`Balance Sheet Ledger backend running on port ${port}`);
             console.log('GraphQL endpoint available at /graphql');
+            console.log(`Connected to MongoDB at ${config.mongoUri}`);
         });
     })
     .catch((error) => {

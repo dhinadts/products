@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_const_declarations
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_const_declarations, unused_element, unused_element_parameter
 
 part of 'screens.dart';
 
@@ -184,7 +184,6 @@ class _DataPanel extends StatelessWidget {
     required this.rows,
     this.title,
     // Kept for existing/common table callers; page-specific tables can ignore it.
-    // ignore: unused_element_parameter
     this.action,
     this.footer,
   });
@@ -208,8 +207,8 @@ class _DataPanel extends StatelessWidget {
                       Expanded(
                         child: Text(
                           title!,
-                          style: const TextStyle(
-                              color: _primary,
+                          style: TextStyle(
+                              color: _appAccent(context),
                               fontSize: 22,
                               fontWeight: FontWeight.w800),
                         ),
@@ -217,8 +216,8 @@ class _DataPanel extends StatelessWidget {
                       if (action != null)
                         Text(
                           action!,
-                          style: const TextStyle(
-                            color: _primary,
+                          style: TextStyle(
+                            color: _appAccent(context),
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -410,7 +409,7 @@ class _OutlineAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       style: OutlinedButton.styleFrom(
-        foregroundColor: _primary,
+        foregroundColor: _appAccent(context),
         side: const BorderSide(color: _primary),
         minimumSize: const Size(150, 52),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),

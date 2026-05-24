@@ -79,7 +79,7 @@ class _SettingsContentState extends State<_SettingsContent> {
               description:
                   'INR currency, debit/credit status logic, voucher prefixes, and account groups.',
               status: 'Ready',
-              statusColor: _primary,
+              statusColor: _appAccent(context),
               onTap: () => _showLedgerDefaults(context),
             ),
             _SettingsCard(
@@ -263,10 +263,10 @@ class _SettingsCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   'Tap to view details',
                   style: TextStyle(
-                    color: _primary,
+                    color: _appAccent(context),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -278,7 +278,6 @@ class _SettingsCard extends StatelessWidget {
     );
   }
 }
-
 
 class _PreferencePanel extends StatelessWidget {
   final bool gstAlerts;
@@ -408,7 +407,7 @@ class _SwitchPreferenceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
-      activeThumbColor: _primary,
+      activeThumbColor: _appAccent(context),
       title: Text(
         label,
         style: const TextStyle(fontWeight: FontWeight.w700),
@@ -476,8 +475,8 @@ void _showSettingsSheet(
                         Expanded(
                           child: Text(
                             title,
-                            style: const TextStyle(
-                              color: _primary,
+                            style: TextStyle(
+                              color: _appAccent(context),
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
                             ),

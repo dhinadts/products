@@ -298,6 +298,8 @@ class _AuthScaffold extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 1080),
               child: compact
                   ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Flexible(
                           flex: 3,
@@ -326,6 +328,7 @@ class _AuthScaffold extends StatelessWidget {
                     )
                   : Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Expanded(child: _BrandPanel(primary: primary)),
                         const SizedBox(width: 48),
@@ -365,7 +368,7 @@ class _BrandPanel extends StatelessWidget {
         ),
         const SizedBox(height: 28),
         Text(
-          'DHINADTS Ledger',
+          'DHINADTS LEDGER',
           style: TextStyle(
             color: primary,
             fontSize: 38,

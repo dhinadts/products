@@ -6,9 +6,9 @@ import { LedgerService } from './ledger.service';
 export const ledgerRouter = Router();
 const service = new LedgerService();
 
-ledgerRouter.get('/', async (_req, res, next) => {
+ledgerRouter.get('/', async (req, res, next) => {
     try {
-        const entries = await service.listEntries();
+        const entries = await service.listEntries(req.query.search?.toString());
         res.json({ success: true, data: entries });
     } catch (err) {
         next(err);

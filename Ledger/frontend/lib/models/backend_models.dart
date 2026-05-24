@@ -177,20 +177,33 @@ class AppNotification {
 class AuthUser {
   final String id;
   final String name;
+  final String firstName;
+  final String lastName;
+  final String photoUrl;
   final String email;
   final String role;
 
   const AuthUser({
     required this.id,
     required this.name,
+    required this.firstName,
+    required this.lastName,
+    required this.photoUrl,
     required this.email,
     required this.role,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
+    final name = json['name']?.toString() ?? '';
+    final nameParts = name.trim().split(RegExp(r'\s+'));
     return AuthUser(
       id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
+      name: name,
+      firstName: json['firstName']?.toString() ??
+          (nameParts.isNotEmpty ? nameParts.first : ''),
+      lastName: json['lastName']?.toString() ??
+          (nameParts.length > 1 ? nameParts.sublist(1).join(' ') : ''),
+      photoUrl: json['photoUrl']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       role: json['role']?.toString() ?? 'user',
     );
@@ -199,9 +212,31 @@ class AuthUser {
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
+        'firstName': firstName,
+        'lastName': lastName,
+        'photoUrl': photoUrl,
         'email': email,
         'role': role,
       };
+
+  AuthUser copyWith({
+    String? name,
+    String? firstName,
+    String? lastName,
+    String? photoUrl,
+    String? email,
+    String? role,
+  }) {
+    return AuthUser(
+      id: id,
+      name: name ?? this.name,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      photoUrl: photoUrl ?? this.photoUrl,
+      email: email ?? this.email,
+      role: role ?? this.role,
+    );
+  }
 }
 
 class AuthResult {

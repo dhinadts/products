@@ -142,10 +142,10 @@ class _DashboardNoInternet extends StatelessWidget {
         children: [
           const Icon(Icons.wifi_off_outlined, color: _red, size: 42),
           const SizedBox(height: 12),
-          const Text(
+           Text(
             'No internet',
             style: TextStyle(
-              color: _primary,
+              color: _appAccent(context),
               fontSize: 24,
               fontWeight: FontWeight.w900,
             ),
@@ -192,7 +192,7 @@ class _DashboardMetricCards extends StatelessWidget {
         _MetricCard(
           label: 'AVAILABLE CASH / BANK',
           value: _formatCurrency(metrics.availableBalance),
-          color: _primary,
+          color: _appAccent(context),
           note: loading ? 'Loading balances' : 'Opening + received - paid',
           icon: Icons.account_balance_wallet_outlined,
         ),
@@ -237,7 +237,7 @@ class _PerformanceCard extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Wrap(
+              Wrap(
                 spacing: 16,
                 runSpacing: 10,
                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -245,13 +245,13 @@ class _PerformanceCard extends StatelessWidget {
                   Text(
                     'Actual Cash Movement',
                     style: TextStyle(
-                      color: _primary,
+                      color: _appAccent(context),
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  _Legend(color: _green, label: 'Received'),
-                  _Legend(color: _red, label: 'Paid'),
+                  const _Legend(color: _green, label: 'Received'),
+                  const _Legend(color: _red, label: 'Paid'),
                 ],
               ),
               const SizedBox(height: 32),
@@ -337,7 +337,7 @@ class _NetMarginCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
-        color: _primary,
+        color: _appAccent(context),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -387,7 +387,7 @@ class _QuickActionsCard extends StatelessWidget {
           _DashboardActionButton(
             icon: Icons.add,
             label: 'New Entry',
-            color: _primary,
+            color: _appAccent(context),
             onPressed: () => _showAppFlowModal(
               context,
               _AppFlowModalType.ledgerEntry,
@@ -502,11 +502,11 @@ class _RecentTransactionsTable extends StatelessWidget {
                   padding: const EdgeInsets.all(24),
                   child: Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Recent Transactions',
                           style: TextStyle(
-                            color: _primary,
+                            color: _appAccent(context),
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                           ),

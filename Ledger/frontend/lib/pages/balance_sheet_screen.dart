@@ -1,6 +1,5 @@
 part of 'screens.dart';
 
-
 class BalanceSheetScreen extends StatelessWidget {
   const BalanceSheetScreen({super.key});
 
@@ -62,7 +61,7 @@ class _BalanceSheetContent extends StatelessWidget {
                     _MetricCard(
                       label: 'NET WORTH',
                       value: _formatCurrency(netWorth),
-                      color: _primary,
+                      color: _appAccent(context),
                       note: 'Assets minus liabilities',
                       icon: Icons.account_balance_wallet_outlined,
                     ),
@@ -124,7 +123,7 @@ class _BalanceSheetSummary extends StatelessWidget {
           _BalanceRow(
             label: 'Available Cash / Bank',
             amount: metrics.availableBalance,
-            color: _primary,
+            color: _appAccent(context),
           ),
           _BalanceRow(
             label: 'Receivables - To Receive',
@@ -171,14 +170,14 @@ class _BalanceSheetBankTable extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.all(24),
+           Padding(
+            padding: const EdgeInsets.all(24),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Bank-wise Balance Sheet',
                 style: TextStyle(
-                  color: _primary,
+                  color: _appAccent(context),
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                 ),
@@ -213,7 +212,7 @@ class _BalanceSheetBankTable extends StatelessWidget {
                   _BalanceRow(
                     label: account.displayName,
                     amount: metrics.availableBalance,
-                    color: _primary,
+                    color: _appAccent(context),
                     subtitle: 'Available balance',
                   ),
                   _BalanceRow(

@@ -44,62 +44,68 @@ class _LedgerContentState extends State<_LedgerContent> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-      valueListenable: _ledgerEntriesVersion,
-      builder: (context, version, _) {
-        return FutureBuilder<_LedgerData>(
-          key: ValueKey(version),
-          future: _fetchLedgerData(),
-          builder: (context, snapshot) {
-            final data = snapshot.data ?? _LedgerData.empty();
-            final loading = snapshot.connectionState == ConnectionState.waiting;
+    return ValueListenableBuilder<String>(
+      valueListenable: _appSearchQuery,
+      builder: (context, searchQuery, _) {
+        return ValueListenableBuilder<int>(
+          valueListenable: _ledgerEntriesVersion,
+          builder: (context, version, _) {
+            return FutureBuilder<_LedgerData>(
+              key: ValueKey(version),
+              future: _fetchLedgerData(),
+              builder: (context, snapshot) {
+                final data = snapshot.data ?? _LedgerData.empty();
+                final loading =
+                    snapshot.connectionState == ConnectionState.waiting;
 
-            final entries = _filterEntries(data.entries);
-            final metrics = _LedgerMetrics.fromData(
-              entries: entries,
-              balances: data.balances,
-              selectedAccount: _selectedAccount,
-            );
-
-            return Column(
-              children: [
-                _LedgerMetricCards(metrics: metrics, loading: loading),
-                const SizedBox(height: 24),
-                _BankAccountDetails(
+                final entries = _filterEntries(data.entries, searchQuery);
+                final metrics = _LedgerMetrics.fromData(
+                  entries: entries,
                   balances: data.balances,
-                  loading: loading,
                   selectedAccount: _selectedAccount,
-                  entries: data.entries,
-                ),
-                const SizedBox(height: 24),
-                _LedgerFilters(
-                  entries: entries,
-                  bankBalances: data.balances,
-                  fromDate: _fromDate,
-                  toDate: _toDate,
-                  selectedAccount: _selectedAccount,
-                  onFromDateChanged: (value) => setState(() {
-                    _fromDate = value;
-                  }),
-                  onToDateChanged: (value) => setState(() {
-                    _toDate = value;
-                  }),
-                  onAccountChanged: (value) => setState(() {
-                    _selectedAccount = value;
-                  }),
-                  onClearFilters: () => setState(() {
-                    _fromDate = null;
-                    _toDate = null;
-                    _selectedAccount = null;
-                  }),
-                ),
-                const SizedBox(height: 20),
-                _LedgerTableView(
-                  entries: entries,
-                  metrics: metrics,
-                  loading: loading,
-                ),
-              ],
+                );
+
+                return Column(
+                  children: [
+                    _LedgerMetricCards(metrics: metrics, loading: loading),
+                    const SizedBox(height: 24),
+                    _BankAccountDetails(
+                      balances: data.balances,
+                      loading: loading,
+                      selectedAccount: _selectedAccount,
+                      entries: data.entries,
+                    ),
+                    const SizedBox(height: 24),
+                    _LedgerFilters(
+                      entries: entries,
+                      bankBalances: data.balances,
+                      fromDate: _fromDate,
+                      toDate: _toDate,
+                      selectedAccount: _selectedAccount,
+                      onFromDateChanged: (value) => setState(() {
+                        _fromDate = value;
+                      }),
+                      onToDateChanged: (value) => setState(() {
+                        _toDate = value;
+                      }),
+                      onAccountChanged: (value) => setState(() {
+                        _selectedAccount = value;
+                      }),
+                      onClearFilters: () => setState(() {
+                        _fromDate = null;
+                        _toDate = null;
+                        _selectedAccount = null;
+                      }),
+                    ),
+                    const SizedBox(height: 20),
+                    _LedgerTableView(
+                      entries: entries,
+                      metrics: metrics,
+                      loading: loading,
+                    ),
+                  ],
+                );
+              },
             );
           },
         );
@@ -119,8 +125,15 @@ class _LedgerContentState extends State<_LedgerContent> {
     );
   }
 
-  List<LedgerEntry> _filterEntries(List<LedgerEntry> entries) {
+  List<LedgerEntry> _filterEntries(List<LedgerEntry> entries, String query) {
+    final normalizedQuery = query.trim().toLowerCase();
+
     return entries.where((entry) {
+      if (normalizedQuery.isNotEmpty &&
+          !_entryMatchesQuery(entry, normalizedQuery)) {
+        return false;
+      }
+
       if (_fromDate != null && entry.date.isBefore(_fromDate!)) {
         return false;
       }
@@ -136,6 +149,19 @@ class _LedgerContentState extends State<_LedgerContent> {
 
       return true;
     }).toList();
+  }
+
+  bool _entryMatchesQuery(LedgerEntry entry, String query) {
+    final searchable = [
+      entry.particulars,
+      entry.ledgerRef,
+      entry.status,
+      _formatCurrency(entry.debit),
+      _formatCurrency(entry.credit),
+      ...entry.tags,
+    ].join(' ').toLowerCase();
+
+    return searchable.contains(query);
   }
 }
 
@@ -244,7 +270,7 @@ class _LedgerMetricCards extends StatelessWidget {
         _MetricCard(
           label: 'AVAILABLE BALANCE',
           value: _formatCurrency(metrics.availableBalance),
-          color: _primary,
+          color: _appAccent(context),
           note: loading ? 'Loading balances' : 'Opening + received - paid',
         ),
         _MetricCard(
@@ -388,8 +414,8 @@ class _BankAccountTile extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             _formatCurrency(availableBalance),
-            style: const TextStyle(
-              color: _primary,
+            style: TextStyle(
+              color: _appAccent(context),
               fontSize: 22,
               fontWeight: FontWeight.w900,
             ),
@@ -486,7 +512,7 @@ class _LedgerFilters extends StatelessWidget {
                     Expanded(
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: _primary,
+                          backgroundColor: _appAccent(context),
                           minimumSize: const Size.fromHeight(52),
                         ),
                         onPressed: () {
@@ -504,7 +530,7 @@ class _LedgerFilters extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: _primary,
+                          foregroundColor: _appAccent(context),
                           minimumSize: const Size.fromHeight(52),
                           side: const BorderSide(color: _primary),
                         ),
@@ -631,7 +657,7 @@ class _LedgerFilters extends StatelessWidget {
                     width: buttonWidth,
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        backgroundColor: _primary,
+                        backgroundColor: _appAccent(context),
                         minimumSize: const Size(150, 52),
                       ),
                       onPressed: () {
@@ -650,7 +676,7 @@ class _LedgerFilters extends StatelessWidget {
                     width: buttonWidth,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: _primary,
+                        foregroundColor: _appAccent(context),
                         minimumSize: const Size(150, 52),
                         side: const BorderSide(color: _primary),
                       ),
@@ -726,7 +752,7 @@ class _LedgerStatementButton extends StatelessWidget {
       width: 150,
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
-          foregroundColor: _primary,
+          foregroundColor: _appAccent(context),
           minimumSize: const Size(150, 48),
           side: const BorderSide(color: _primary),
           shape: RoundedRectangleBorder(
@@ -945,8 +971,8 @@ class _LedgerFooterRow extends StatelessWidget {
             child: Text(
               loading ? 'LOADING LIVE LEDGER...' : 'AVAILABLE BALANCE TOTAL',
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: _primary,
+              style: TextStyle(
+                color: _appAccent(context),
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
               ),
@@ -975,7 +1001,7 @@ class _LedgerFooterRow extends StatelessWidget {
             alignEnd: true,
             child: _LedgerAmountText(
               value: _formatCurrency(metrics.availableBalance),
-              color: _primary,
+              color: _appAccent(context),
               large: true,
             ),
           ),
