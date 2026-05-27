@@ -7,11 +7,13 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _AppShell(
-      activeRoute: '/dashboard',
-      searchHint: 'Search accounts, invoices...',
-      floatingIcon: Icons.add,
-      child: _DashboardContent(),
+    return SafeArea(
+      child: const _AppShell(
+        activeRoute: '/dashboard',
+        searchHint: 'Search accounts, invoices...',
+        floatingIcon: Icons.add,
+        child: _DashboardContent(),
+      ),
     );
   }
 }
@@ -142,7 +144,7 @@ class _DashboardNoInternet extends StatelessWidget {
         children: [
           const Icon(Icons.wifi_off_outlined, color: _red, size: 42),
           const SizedBox(height: 12),
-           Text(
+          Text(
             'No internet',
             style: TextStyle(
               color: _appAccent(context),
@@ -337,7 +339,7 @@ class _NetMarginCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
-        color: _appAccent(context),
+        color: const Color(0xFF1F4E5F),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(

@@ -4,23 +4,28 @@ import 'package:go_router/go_router.dart';
 
 import 'pages/login_screen.dart';
 import 'pages/screens.dart';
+import 'services/bank_account_setup_session.dart';
 import 'services/auth_session.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   debugLogDiagnostics: true,
-  refreshListenable: AuthSession.revision,
+  refreshListenable: Listenable.merge([
+    AuthSession.revision,
+    BankAccountSetupSession.revision,
+  ]),
   redirect: (BuildContext context, GoRouterState state) {
     final path = state.location;
     final isAuthRoute = path == '/' || path == '/login' || path == '/signup';
+    final isTourRoute = path == '/app-tour';
 
     final isLoggedIn = AuthSession.isAuthenticated;
 
-    if (!isLoggedIn && !isAuthRoute) {
+    if (!isLoggedIn && !isAuthRoute && !isTourRoute) {
       return '/login';
     }
 
-    if (isLoggedIn && isAuthRoute) {
+    if (isLoggedIn && (path == '/login' || path == '/signup')) {
       return '/dashboard';
     }
 
@@ -30,7 +35,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/',
       pageBuilder: (context, state) =>
-          _buildWebsitePage(state, const LoginScreen()),
+          _buildWebsitePage(state, const SplashScreen()),
     ),
     GoRoute(
       path: '/login',
@@ -43,9 +48,19 @@ final GoRouter appRouter = GoRouter(
           _buildWebsitePage(state, const SignUpScreen()),
     ),
     GoRoute(
+      path: '/app-tour',
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const AppTourScreen()),
+    ),
+    GoRoute(
       path: '/dashboard',
       pageBuilder: (context, state) =>
           _buildWebsitePage(state, const DashboardScreen()),
+    ),
+    GoRoute(
+      path: '/bank-details',
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const BankDetailsScreen(isOnboarding: true)),
     ),
     GoRoute(
       path: '/ledger',
@@ -61,6 +76,11 @@ final GoRouter appRouter = GoRouter(
       path: '/reports',
       pageBuilder: (context, state) =>
           _buildWebsitePage(state, const ReportsScreen()),
+    ),
+    GoRoute(
+      path: '/audit-checklist',
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const AuditChecklistScreen()),
     ),
     GoRoute(
       path: '/settings',
@@ -81,6 +101,11 @@ final GoRouter appRouter = GoRouter(
       path: '/profile',
       pageBuilder: (context, state) =>
           _buildWebsitePage(state, const ProfileScreen()),
+    ),
+    GoRoute(
+      path: '/profile/bank-details',
+      pageBuilder: (context, state) =>
+          _buildWebsitePage(state, const BankDetailsScreen()),
     ),
     GoRoute(
       path: '/screen1',

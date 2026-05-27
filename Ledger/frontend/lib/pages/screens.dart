@@ -3,25 +3,34 @@
 import 'dart:async';
 
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 import '../models/backend_models.dart';
+import '../services/auth_session.dart';
 import '../services/backend_api.dart';
+import '../services/bank_account_setup_session.dart';
 import '../services/statement_actions_stub.dart'
     if (dart.library.html) '../services/statement_actions_web.dart';
 import '../state/auth_cubit.dart';
+import '../state/bank_accounts_cubit.dart';
+import '../widgets/brand_identity.dart';
 
+part 'splash_screen.dart';
 part 'screen_router.dart';
 part 'app_shell.dart';
 part 'dashboard_screen.dart';
+part 'bank_details_screen.dart';
 part 'ledger_screen.dart';
 part 'reports_screen.dart';
 part 'balance_sheet_screen.dart';
 part 'settings_screen.dart';
 part 'notifications_screen.dart';
 part 'help_profile_screen.dart';
+part 'audit_checklist_screen.dart';
 part 'common_widgets.dart';
 
 const _primary = Color(0xFF145A32);
@@ -172,9 +181,14 @@ String _formatIndianAmount(double value) {
 
 class _ResponsiveGrid extends StatelessWidget {
   final double minTileWidth;
+  final double? tileHeight;
   final List<Widget> children;
 
-  const _ResponsiveGrid({required this.minTileWidth, required this.children});
+  const _ResponsiveGrid({
+    required this.minTileWidth,
+    required this.children,
+    this.tileHeight,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +203,13 @@ class _ResponsiveGrid extends StatelessWidget {
           spacing: 20,
           runSpacing: 20,
           children: children
-              .map((child) => SizedBox(width: width.toDouble(), child: child))
+              .map(
+                (child) => SizedBox(
+                  width: width.toDouble(),
+                  height: tileHeight,
+                  child: child,
+                ),
+              )
               .toList(),
         );
       },

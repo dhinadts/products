@@ -1,10 +1,12 @@
 import 'package:balance_sheet_ledger/services/backend_api.dart';
 import 'package:balance_sheet_ledger/state/auth_cubit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app_theme.dart';
+import '../widgets/brand_identity.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -96,7 +98,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
       if (mounted) {
         await context.read<AuthCubit>().authenticate(result, rememberMe: true);
-        context.go('/dashboard');
+        if (!mounted) {
+          return;
+        }
+        context.go(_nextRouteAfterSignup(context));
       }
     } catch (error) {
       if (mounted) {
@@ -110,7 +115,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   bool _isValidEmail(String email) {
-    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email);
   }
 
   String _getUserFriendlyError(String error) {
@@ -231,20 +236,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  primaryColor.withOpacity(0.2),
-                  primaryColor.withOpacity(0.05),
-                ],
-              ),
-            ),
-            child: Icon(
-              Icons.person_add_alt_rounded,
-              size: 100,
-              color: primaryColor,
+            constraints: const BoxConstraints(maxWidth: 440),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 30),
+            child: LedgerBrandLockup(
+              logoSize: 128,
+              titleSize: 34,
+              subtitleSize: 13,
+              center: true,
+              titleColor: theme.colorScheme.onSurface,
+              subtitleColor: primaryColor,
             ),
           ),
           const SizedBox(height: 32),
@@ -268,6 +268,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
           const SizedBox(height: 32),
           _buildSecurityBadges(theme, isDark, primaryColor),
+          const SizedBox(height: 36),
+          const DhinadtsCompanyMark(height: 76, center: true),
         ],
       ),
     );
@@ -277,35 +279,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? [primaryColor, primaryColor.withOpacity(0.7)]
-                      : [AppThemes.primary, AppThemes.primaryContainer],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.account_balance_wallet_rounded,
-                color: isDark ? AppThemes.darkBackground : Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'LEDGER',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 2,
-                color: isDark ? primaryColor : AppThemes.primary,
-              ),
-            ),
-          ],
+        Flexible(
+          child: LedgerBrandLockup(
+            logoSize: 46,
+            titleSize: 19,
+            subtitleSize: 9,
+            dense: true,
+            titleColor: theme.colorScheme.onSurface,
+            subtitleColor: primaryColor,
+          ),
         ),
         IconButton(
           icon: Icon(
@@ -655,6 +637,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
+}
+
+String _nextRouteAfterSignup(BuildContext context) {
+  if (kIsWeb || MediaQuery.sizeOf(context).shortestSide >= 600) {
+    return '/dashboard';
+  }
+
+  return '/bank-details';
 }
 
 // Responsive layout helper (same as login screen)

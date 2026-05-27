@@ -49,30 +49,81 @@ class LedgerEntry {
 
 class BankBalance {
   final String id;
+  final String accountHolderName;
+  final String ownerType;
   final String accountName;
   final String bankName;
+  final String branchName;
+  final String accountNumber;
+  final String ifsc;
   final String accountType;
+  final double openingBalance;
   final double balance;
+  final bool primaryAccount;
 
   const BankBalance({
     required this.id,
+    required this.accountHolderName,
+    required this.ownerType,
     required this.accountName,
     required this.bankName,
+    required this.branchName,
+    required this.accountNumber,
+    required this.ifsc,
     required this.accountType,
+    required this.openingBalance,
     required this.balance,
+    required this.primaryAccount,
   });
 
-  String get displayName => '$accountName - $bankName';
+  String get maskedAccountNumber {
+    if (accountNumber.length <= 4) {
+      return accountNumber;
+    }
+    return '•••• ${accountNumber.substring(accountNumber.length - 4)}';
+  }
+
+  String get displayName {
+    final holder =
+        accountHolderName.isNotEmpty ? accountHolderName : accountName;
+    return '$holder - $bankName';
+  }
 
   factory BankBalance.fromJson(Map<String, dynamic> json) {
+    final holder = json['accountHolderName']?.toString() ??
+        json['accountName']?.toString() ??
+        '';
+    final balance = _toDouble(json['balance'] ?? json['openingBalance']);
     return BankBalance(
       id: json['id']?.toString() ?? '',
-      accountName: json['accountName']?.toString() ?? '',
+      accountHolderName: holder,
+      ownerType: json['ownerType']?.toString() ?? 'Company',
+      accountName: json['accountName']?.toString() ?? holder,
       bankName: json['bankName']?.toString() ?? '',
+      branchName: json['branchName']?.toString() ?? '',
+      accountNumber: json['accountNumber']?.toString() ?? '',
+      ifsc: json['ifsc']?.toString() ?? '',
       accountType: json['accountType']?.toString() ?? '',
-      balance: _toDouble(json['balance']),
+      openingBalance: _toDouble(json['openingBalance'] ?? balance),
+      balance: balance,
+      primaryAccount: json['primaryAccount'] == true,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'accountHolderName': accountHolderName,
+        'ownerType': ownerType,
+        'accountName': accountName,
+        'bankName': bankName,
+        'branchName': branchName,
+        'accountNumber': accountNumber,
+        'ifsc': ifsc,
+        'accountType': accountType,
+        'openingBalance': openingBalance,
+        'balance': balance,
+        'primaryAccount': primaryAccount,
+      };
 }
 
 class BalanceSheetItem {

@@ -342,7 +342,7 @@ class _BankAccountDetails extends StatelessWidget {
           else
             LayoutBuilder(
               builder: (context, constraints) {
-                final compact = constraints.maxWidth < 760;
+                final compact = constraints.maxWidth < 1080;
 
                 return Wrap(
                   spacing: 12,
@@ -462,7 +462,7 @@ class _LedgerFilters extends StatelessWidget {
     return _Panel(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 900;
+          final compact = constraints.maxWidth < 1080;
 
           if (compact) {
             return Column(

@@ -22,10 +22,6 @@ class _AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<_AppShell> {
-  static const double _floatingButtonSize = 56;
-  static const double _floatingButtonMargin = 16;
-  Offset? _floatingButtonOffset;
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -42,119 +38,57 @@ class _AppShellState extends State<_AppShell> {
           backgroundColor: _appBackground(context),
           drawer: showSidebar || showRail
               ? null
-              : Drawer(child: _SideNav(activeRoute: widget.activeRoute)),
+              : Drawer(
+                  child: _SideNav(
+                    activeRoute: widget.activeRoute,
+                    scrollable: true,
+                  ),
+                ),
+          floatingActionButton: FloatingActionButton(
+            tooltip: 'Add',
+            backgroundColor: _appAccent(context),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            onPressed: () => _showAppFlowModal(
+              context,
+              _AppFlowModalType.fromRoute(widget.activeRoute),
+            ),
+            child: Icon(widget.floatingIcon),
+          ),
           body: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, safeConstraints) {
-                final offset = _clampedFloatingButtonOffset(safeConstraints);
-
-                return Stack(
-                  children: [
-                    Row(
-                      children: [
-                        if (showSidebar)
-                          _SideNav(activeRoute: widget.activeRoute),
-                        if (showRail)
-                          _TabletNavigationRail(
-                              activeRoute: widget.activeRoute),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              _TopBar(
-                                showMenu: !showSidebar,
-                                searchHint: widget.searchHint,
-                                fiscalBadge: widget.fiscalBadge,
-                              ),
-                              Expanded(
-                                child: _PageScrollView(
-                                  padding: pagePadding,
-                                  child: widget.child,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    Positioned(
-                      left: offset.dx,
-                      top: offset.dy,
-                      child: _MovableFloatingButton(
-                        icon: widget.floatingIcon,
-                        onPressed: () => _showAppFlowModal(
-                          context,
-                          _AppFlowModalType.fromRoute(widget.activeRoute),
-                        ),
-                        onDragUpdate: (delta) {
-                          setState(() {
-                            final current = _floatingButtonOffset ?? offset;
-                            _floatingButtonOffset =
-                                _clampOffset(current + delta, safeConstraints);
-                          });
-                        },
+            child: Row(
+              children: [
+                if (showSidebar)
+                  _SideNav(
+                    activeRoute: widget.activeRoute,
+                    scrollable: false,
+                  ),
+                if (showRail)
+                  _TabletNavigationRail(activeRoute: widget.activeRoute),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _TopBar(
+                        showMenu: !showSidebar,
+                        searchHint: widget.searchHint,
+                        fiscalBadge: widget.fiscalBadge,
                       ),
-                    ),
-                  ],
-                );
-              },
+                      Expanded(
+                        child: _PageScrollView(
+                          padding: pagePadding,
+                          child: widget.child,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         );
       },
-    );
-  }
-
-  Offset _clampedFloatingButtonOffset(BoxConstraints constraints) {
-    final current = _floatingButtonOffset ??
-        Offset(
-          constraints.maxWidth - _floatingButtonSize - _floatingButtonMargin,
-          constraints.maxHeight -
-              _floatingButtonSize -
-              (_floatingButtonMargin * 5),
-        );
-    return _clampOffset(current, constraints);
-  }
-
-  Offset _clampOffset(Offset offset, BoxConstraints constraints) {
-    final maxX =
-        (constraints.maxWidth - _floatingButtonSize - _floatingButtonMargin)
-            .clamp(_floatingButtonMargin, double.infinity);
-    final maxY =
-        (constraints.maxHeight - _floatingButtonSize - _floatingButtonMargin)
-            .clamp(_floatingButtonMargin, double.infinity);
-
-    return Offset(
-      offset.dx.clamp(_floatingButtonMargin, maxX).toDouble(),
-      offset.dy.clamp(_floatingButtonMargin, maxY).toDouble(),
-    );
-  }
-}
-
-class _MovableFloatingButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onPressed;
-  final ValueChanged<Offset> onDragUpdate;
-
-  const _MovableFloatingButton({
-    required this.icon,
-    required this.onPressed,
-    required this.onDragUpdate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onPanUpdate: (details) => onDragUpdate(details.delta),
-      child: FloatingActionButton(
-        tooltip: 'Drag or tap',
-        backgroundColor: _appAccent(context),
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        onPressed: onPressed,
-        child: Icon(icon),
-      ),
     );
   }
 }
@@ -232,21 +166,14 @@ class _TopBar extends StatelessWidget {
                 const SizedBox(width: 4),
               ],
               Expanded(
-                child: Text(
-                  'Dhinadts IT Solutions & Services',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _appAccent(context),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: LedgerBrandLockup(
+                  logoSize: 40,
+                  titleSize: 17,
+                  subtitleSize: 8,
+                  dense: true,
+                  titleColor: _appText(context),
+                  subtitleColor: _appAccent(context),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Search',
-                icon: Icon(Icons.search, color: _appText(context)),
-                onPressed: () => _showSearchDialog(context, searchHint),
               ),
               IconButton(
                 tooltip: _isDark(context)
@@ -315,36 +242,33 @@ class _TopBar extends StatelessWidget {
               ),
               const SizedBox(width: 8),
             ],
-            Flexible(
-              fit: FlexFit.tight,
-              child: Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 16,
-                runSpacing: 6,
+            Expanded(
+              child: Row(
                 children: [
-                  Text(
-                    "DHINADTS IT SOLUTIONS AND SUPPORT (OPC) PRIVATE LIMITED",
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: _appAccent(context),
-                      fontSize: isCompact ? 19 : 26,
-                      fontWeight: FontWeight.w800,
+                  Expanded(
+                    child: LedgerBrandLockup(
+                      logoSize: isCompact ? 40 : 48,
+                      titleSize: isCompact ? 18 : 22,
+                      subtitleSize: isCompact ? 8 : 10,
+                      dense: isCompact,
+                      titleColor: _appText(context),
+                      subtitleColor: _appAccent(context),
                     ),
                   ),
-                  if (fiscalBadge != null)
-                    _Chip(
-                      label: fiscalBadge!,
-                      color: _green,
-                      filled: true,
-                      large: true,
+                  if (fiscalBadge != null) ...[
+                    const SizedBox(width: 16),
+                    Flexible(
+                      child: _Chip(
+                        label: fiscalBadge!,
+                        color: _green,
+                        filled: true,
+                        large: true,
+                      ),
                     ),
+                  ],
                 ],
               ),
             ),
-            if (constraints.maxWidth >= 760) ...[
-              _SearchBox(hint: searchHint),
-              const SizedBox(width: 20),
-            ],
             IconButton(
               tooltip: _isDark(context)
                   ? 'Switch to light theme'
@@ -496,79 +420,6 @@ class _SearchBoxState extends State<_SearchBox> {
   }
 }
 
-void _showSearchDialog(BuildContext context, String hint) {
-  showDialog<void>(
-    context: context,
-    builder: (context) => _CompactSearchDialog(hint: hint),
-  );
-}
-
-class _CompactSearchDialog extends StatefulWidget {
-  final String hint;
-
-  const _CompactSearchDialog({required this.hint});
-
-  @override
-  State<_CompactSearchDialog> createState() => _CompactSearchDialogState();
-}
-
-class _CompactSearchDialogState extends State<_CompactSearchDialog> {
-  final TextEditingController _controller = TextEditingController();
-  Future<List<LedgerEntry>>? _resultsFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.text = _appSearchQuery.value;
-    if (_controller.text.trim().isNotEmpty) {
-      _resultsFuture = _backendApi.searchLedgerEntries(_controller.text.trim());
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Search transactions'),
-      content: SizedBox(
-        width: 520,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: widget.hint,
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                _appSearchQuery.value = value.trim();
-                setState(() {
-                  _resultsFuture = value.trim().isEmpty
-                      ? null
-                      : _backendApi.searchLedgerEntries(value.trim());
-                });
-              },
-            ),
-            const SizedBox(height: 14),
-            _SearchResultsList(
-              query: _controller.text.trim(),
-              resultsFuture: _resultsFuture,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _SearchResultsDialog extends StatelessWidget {
   final String query;
   final Future<List<LedgerEntry>> resultsFuture;
@@ -680,106 +531,134 @@ class _SearchResultsList extends StatelessWidget {
 
 class _SideNav extends StatelessWidget {
   final String activeRoute;
+  final bool scrollable;
 
-  const _SideNav({required this.activeRoute});
+  const _SideNav({
+    required this.activeRoute,
+    required this.scrollable,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final content = _SideNavContent(
+      activeRoute: activeRoute,
+      useFlexibleSpacing: !scrollable,
+    );
+
     return Container(
       width: 320,
       color: _appBackground(context),
       child: SafeArea(
-        child: SingleChildScrollView(
+        child: scrollable ? SingleChildScrollView(child: content) : content,
+      ),
+    );
+  }
+}
+
+class _SideNavContent extends StatelessWidget {
+  final String activeRoute;
+  final bool useFlexibleSpacing;
+
+  const _SideNavContent({
+    required this.activeRoute,
+    required this.useFlexibleSpacing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(30, 22, 24, 22),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(30, 28, 24, 34),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'DHINADTS OPC',
-                      style: TextStyle(
-                        color: _appAccent(context),
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text('SSI Edition',
-                        style: TextStyle(color: _appMuted(context))),
-                  ],
-                ),
+              LedgerBrandLockup(
+                logoSize: 48,
+                titleSize: 19,
+                subtitleSize: 9,
+                dense: true,
+                titleColor: _appText(context),
+                subtitleColor: _appAccent(context),
               ),
-              _NavItem(
-                icon: Icons.dashboard_outlined,
-                label: AppRouteNames.dashboard,
-                route: '/dashboard',
-                activeRoute: activeRoute,
-              ),
-              _NavItem(
-                icon: Icons.menu_book_outlined,
-                label: AppRouteNames.ledger,
-                route: '/ledger',
-                activeRoute: activeRoute,
-              ),
-              _NavItem(
-                icon: Icons.account_balance_outlined,
-                label: AppRouteNames.balanceSheet,
-                route: '/balance-sheet',
-                activeRoute: activeRoute,
-              ),
-              _NavItem(
-                icon: Icons.assessment_outlined,
-                label: AppRouteNames.reports,
-                route: '/reports',
-                activeRoute: activeRoute,
-              ),
-              _NavItem(
-                icon: Icons.settings_outlined,
-                label: AppRouteNames.settings,
-                route: '/settings',
-                activeRoute: activeRoute,
-              ),
-              const SizedBox(height: 220),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(58),
-                    backgroundColor: _primaryContainer,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  onPressed: () =>
-                      _showAppFlowModal(context, _AppFlowModalType.ledgerEntry),
-                  icon: Icon(
-                    Icons.add,
-                    color: _appAccent(context),
-                  ),
-                  label: Text(
-                    'Add Entry',
-                    style: TextStyle(
-                        color: _appAccent(context),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  children: [
-                    Expanded(child: _CompanySetupStatus()),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 18),
+              const DhinadtsCompanyMark(height: 52),
             ],
           ),
         ),
-      ),
+        _NavItem(
+          icon: Icons.dashboard_outlined,
+          label: AppRouteNames.dashboard,
+          route: '/dashboard',
+          activeRoute: activeRoute,
+        ),
+        _NavItem(
+          icon: Icons.menu_book_outlined,
+          label: AppRouteNames.ledger,
+          route: '/ledger',
+          activeRoute: activeRoute,
+        ),
+        _NavItem(
+          icon: Icons.account_balance_outlined,
+          label: AppRouteNames.balanceSheet,
+          route: '/balance-sheet',
+          activeRoute: activeRoute,
+        ),
+        _NavItem(
+          icon: Icons.assessment_outlined,
+          label: AppRouteNames.reports,
+          route: '/reports',
+          activeRoute: activeRoute,
+        ),
+        _NavItem(
+          icon: Icons.fact_check_outlined,
+          label: AppRouteNames.auditChecklist,
+          route: '/audit-checklist',
+          activeRoute: activeRoute,
+        ),
+        _NavItem(
+          icon: Icons.settings_outlined,
+          label: AppRouteNames.settings,
+          route: '/settings',
+          activeRoute: activeRoute,
+        ),
+        if (useFlexibleSpacing) const Spacer() else const SizedBox(height: 28),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(58),
+              backgroundColor: _primaryContainer,
+              foregroundColor: _isDark(context) ? _financeGold : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            onPressed: () =>
+                _showAppFlowModal(context, _AppFlowModalType.ledgerEntry),
+            icon: Icon(
+              Icons.add,
+              color: _isDark(context) ? _financeGold : Colors.white,
+            ),
+            label: Text(
+              'Add Entry',
+              style: TextStyle(
+                  color: _isDark(context) ? _financeGold : Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 18),
+          child: Row(
+            children: [
+              Expanded(child: _CompanySetupStatus()),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -955,6 +834,7 @@ class _TabletNavigationRail extends StatelessWidget {
       _RailNavItem(Icons.menu_book_outlined, '/ledger', 'Ledger'),
       _RailNavItem(Icons.account_balance_outlined, '/balance-sheet', 'Balance'),
       _RailNavItem(Icons.assessment_outlined, '/reports', 'Reports'),
+      _RailNavItem(Icons.fact_check_outlined, '/audit-checklist', 'Audit'),
       _RailNavItem(Icons.settings_outlined, '/settings', 'Settings'),
     ];
 
@@ -1017,6 +897,7 @@ enum _AppFlowModalType {
   ledgerEntry,
   dashboardAction,
   reportExport,
+  auditChecklist,
   balanceSheetAction,
   settingsUpdate,
   notificationsReview,
@@ -1029,6 +910,8 @@ enum _AppFlowModalType {
         return _AppFlowModalType.dashboardAction;
       case '/reports':
         return _AppFlowModalType.reportExport;
+      case '/audit-checklist':
+        return _AppFlowModalType.auditChecklist;
       case '/balance-sheet':
         return _AppFlowModalType.balanceSheetAction;
       case '/settings':
@@ -1096,6 +979,8 @@ class _AppFlowModalContent extends StatelessWidget {
         return const _DashboardActionModal();
       case _AppFlowModalType.reportExport:
         return const _ReportExportModal();
+      case _AppFlowModalType.auditChecklist:
+        return const _AuditChecklistModal();
       case _AppFlowModalType.balanceSheetAction:
         return const _BalanceSheetActionModal();
       case _AppFlowModalType.settingsUpdate:
@@ -1607,6 +1492,37 @@ class _ReportExportModal extends StatelessWidget {
         _ModalField(label: 'Period', value: 'Not selected'),
         _ModalField(label: 'Format', value: 'Not selected'),
         _ModalField(label: 'Include GST Notes', value: 'No'),
+      ],
+    );
+  }
+}
+
+class _AuditChecklistModal extends StatelessWidget {
+  const _AuditChecklistModal();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _AppFlowModalShell(
+      title: 'Audit Checklist',
+      subtitle: 'Review demo readiness items before auditor handoff.',
+      icon: Icons.fact_check_outlined,
+      primaryActionLabel: 'Review Checklist',
+      children: [
+        _ModalChoiceTile(
+          icon: Icons.receipt_long_outlined,
+          title: 'Voucher Review',
+          subtitle: 'Check receipts, payments, and journal entries.',
+        ),
+        _ModalChoiceTile(
+          icon: Icons.account_balance_outlined,
+          title: 'Bank Reconciliation',
+          subtitle: 'Compare ledger balances with managed accounts.',
+        ),
+        _ModalChoiceTile(
+          icon: Icons.verified_outlined,
+          title: 'Approval Trail',
+          subtitle: 'Confirm open approvals and audit events.',
+        ),
       ],
     );
   }

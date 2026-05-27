@@ -1,11 +1,14 @@
 import 'package:balance_sheet_ledger/services/backend_api.dart';
 import 'package:balance_sheet_ledger/state/auth_cubit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app_theme.dart';
+import '../services/bank_account_setup_session.dart';
+import '../widgets/brand_identity.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _api = BackendApi();
   bool _obscurePassword = true;
-  bool _rememberMe = false;
+  bool _rememberMe = true;
   bool _isSubmitting = false;
   String? _error;
 
@@ -32,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _loadRememberMePreference() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _rememberMe = prefs.getBool('ledger_remember_session') ?? false;
+      _rememberMe = prefs.getBool('ledger_remember_session') ?? true;
     });
   }
 
@@ -76,10 +79,14 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final result = await _api.login(email: email, password: password);
       if (mounted) {
-        await context
-            .read<AuthCubit>()
-            .authenticate(result, rememberMe: _rememberMe);
-        context.go('/dashboard');
+        await context.read<AuthCubit>().authenticate(
+              result,
+              rememberMe: _rememberMe,
+            );
+        if (!mounted) {
+          return;
+        }
+        context.go(_nextRouteAfterLogin(context));
       }
     } catch (error) {
       if (mounted) {
@@ -93,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   bool _isValidEmail(String email) {
-    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email);
   }
 
   String _getUserFriendlyError(String error) {
@@ -101,7 +108,8 @@ class _LoginScreenState extends State<LoginScreen> {
         error.toLowerCase().contains('invalid email') ||
         error.toLowerCase().contains('wrong password')) {
       return 'Invalid email or password. Please try again.';
-    } else if (error.toLowerCase().contains('network')) {
+    } else if (error.toLowerCase().contains('network') ||
+        error.toLowerCase().contains('xmlhttprequest')) {
       return 'Network error. Please check your internet connection.';
     } else if (error.toLowerCase().contains('timeout')) {
       return 'Connection timeout. Please try again.';
@@ -215,20 +223,15 @@ class _LoginScreenState extends State<LoginScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  primaryColor.withOpacity(0.2),
-                  primaryColor.withOpacity(0.05),
-                ],
-              ),
-            ),
-            child: Icon(
-              Icons.account_balance_wallet_rounded,
-              size: 100,
-              color: primaryColor,
+            constraints: const BoxConstraints(maxWidth: 440),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 30),
+            child: LedgerBrandLockup(
+              logoSize: 128,
+              titleSize: 34,
+              subtitleSize: 13,
+              center: true,
+              titleColor: theme.colorScheme.onSurface,
+              subtitleColor: primaryColor,
             ),
           ),
           const SizedBox(height: 32),
@@ -252,6 +255,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 32),
           _buildSecurityBadges(theme, isDark, primaryColor),
+          const SizedBox(height: 36),
+          const DhinadtsCompanyMark(height: 76, center: true),
         ],
       ),
     );
@@ -261,35 +266,15 @@ class _LoginScreenState extends State<LoginScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? [primaryColor, primaryColor.withOpacity(0.7)]
-                      : [AppThemes.primary, AppThemes.primaryContainer],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.account_balance_wallet_rounded,
-                color: isDark ? AppThemes.darkBackground : Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'LEDGER',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 2,
-                color: isDark ? primaryColor : AppThemes.primary,
-              ),
-            ),
-          ],
+        Flexible(
+          child: LedgerBrandLockup(
+            logoSize: 46,
+            titleSize: 19,
+            subtitleSize: 9,
+            dense: true,
+            titleColor: theme.colorScheme.onSurface,
+            subtitleColor: primaryColor,
+          ),
         ),
         IconButton(
           icon: Icon(
@@ -399,10 +384,14 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 16),
 
         // Remember me & Forgot password
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
                   width: 20,
@@ -482,8 +471,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildFooter(ThemeData theme, bool isDark, Color primaryColor) {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
               'New user?',
@@ -582,6 +572,14 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
+
+String _nextRouteAfterLogin(BuildContext context) {
+  if (kIsWeb || MediaQuery.sizeOf(context).shortestSide >= 600) {
+    return '/dashboard';
+  }
+
+  return BankAccountSetupSession.isComplete ? '/dashboard' : '/bank-details';
 }
 
 // Responsive layout helper

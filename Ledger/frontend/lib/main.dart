@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'app_theme.dart';
 import 'routes.dart';
+import 'state/bank_accounts_cubit.dart';
 import 'state/auth_cubit.dart';
+import 'services/bank_account_setup_session.dart';
 import 'services/auth_session.dart';
 
 Future<void> main() async {
@@ -11,11 +14,13 @@ Future<void> main() async {
 
   try {
     await AuthSession.restore();
+    await BankAccountSetupSession.restore();
   } catch (e) {
-    debugPrint('Auth restore failed: $e');
+    debugPrint('Session restore failed: $e');
   }
 
   runApp(const BalanceSheetLedgerApp());
+  FlutterNativeSplash.remove();
 }
 
 class BalanceSheetLedgerApp extends StatelessWidget {
@@ -23,8 +28,11 @@ class BalanceSheetLedgerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => AuthCubit(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => AuthCubit()),
+        BlocProvider(create: (_) => BankAccountsCubit()),
+      ],
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: AppThemeController.themeMode,
         builder: (context, themeMode, child) {

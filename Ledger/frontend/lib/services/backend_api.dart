@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/backend_models.dart';
 import 'auth_session.dart';
@@ -108,12 +109,39 @@ class BackendApi {
   }
 
   Future<List<BankBalance>> fetchBankBalances() async {
-    final data = await _get('/api/bank-balances');
-    final balances = data as List<dynamic>? ?? const [];
-    return balances
-        .whereType<Map<String, dynamic>>()
-        .map(BankBalance.fromJson)
-        .toList();
+    final localBalances = await _loadLocalBankBalances();
+
+    try {
+      final data = await _get('/api/bank-balances');
+      final balances = data as List<dynamic>? ?? const [];
+      final remoteBalances = balances
+          .whereType<Map<String, dynamic>>()
+          .map(BankBalance.fromJson)
+          .toList();
+      return _dedupeBankBalances([...localBalances, ...remoteBalances]);
+    } catch (_) {
+      if (localBalances.isNotEmpty) {
+        return localBalances;
+      }
+      rethrow;
+    }
+  }
+
+  Future<BankBalance> createBankAccount(Map<String, dynamic> account) async {
+    final data = await _send('POST', '/api/bank-balances', body: account);
+    return BankBalance.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<BankBalance> updateBankAccount(
+    String id,
+    Map<String, dynamic> account,
+  ) async {
+    final data = await _send('PUT', '/api/bank-balances/$id', body: account);
+    return BankBalance.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<void> deleteBankAccount(String id) async {
+    await _send('DELETE', '/api/bank-balances/$id');
   }
 
   Future<LedgerEntry> createLedgerEntry(Map<String, dynamic> entry) async {
@@ -329,6 +357,55 @@ class BackendApi {
 
   String get _connectionErrorMessage =>
       'Cannot reach backend at $_baseUrl. Start the backend server and try again.';
+
+  Future<List<BankBalance>> _loadLocalBankBalances() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('ledger_local_bank_accounts');
+    if (raw == null || raw.isEmpty) {
+      return const <BankBalance>[];
+    }
+
+    try {
+      final items = jsonDecode(raw) as List<dynamic>;
+      return _dedupeBankBalances(
+        items
+            .whereType<Map<String, dynamic>>()
+            .map(BankBalance.fromJson)
+            .toList(),
+      );
+    } catch (_) {
+      await prefs.remove('ledger_local_bank_accounts');
+      return const <BankBalance>[];
+    }
+  }
+
+  List<BankBalance> _dedupeBankBalances(List<BankBalance> accounts) {
+    final seen = <String>{};
+    final result = <BankBalance>[];
+
+    for (final account in accounts) {
+      final key = _bankAccountKey(account);
+      if (seen.add(key)) {
+        result.add(account);
+      }
+    }
+
+    return result;
+  }
+
+  String _bankAccountKey(BankBalance account) {
+    final accountNumber = account.accountNumber.trim().toLowerCase();
+    final ifsc = account.ifsc.trim().toLowerCase();
+    if (accountNumber.isNotEmpty || ifsc.isNotEmpty) {
+      return '$accountNumber|$ifsc';
+    }
+
+    return [
+      account.accountHolderName,
+      account.bankName,
+      account.accountType,
+    ].map((value) => value.trim().toLowerCase()).join('|');
+  }
 }
 
 class BackendApiException implements Exception {

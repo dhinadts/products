@@ -1,0 +1,140 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+.idea/
+.vscode/
+
+# Flutter/Dart/Pub
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.pub-cache/
+build/
+coverage/
+doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+package_config.json
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# Drift / Build Runner
+**/*.g.dart
+**/*.mocks.dart
+.build/
+generated/
+
+# Android
+android/.gradle/
+android/captures/
+android/local.properties
+android/**/GeneratedPluginRegistrant.java
+
+# Android Studio
+android/.idea/
+*.iml
+
+# Keystore / Signing
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+*.jks
+*.keystore
+
+# APK / AAB
+*.apk
+*.aab
+
+# iOS
+ios/Flutter/.last_build_id
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Pods/
+ios/.symlinks/
+ios/Runner.xcworkspace/
+ios/DerivedData/
+
+# macOS
+macos/Flutter/ephemeral/
+
+# Linux
+linux/flutter/ephemeral/
+
+# Windows
+windows/flutter/ephemeral/
+
+# Web
+web/.dart_tool/
+
+# Firebase
+google-services.json
+GoogleService-Info.plist
+firebase-debug.log
+firestore-debug.log
+
+# Test / Coverage
+coverage/
+test/.packages
+
+# Environment
+.env
+.env.*
+*.env
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# IntelliJ
+out/
+
+# FVM
+.fvm/
+fvm_settings.json
+
+# Dependency overrides local packages
+third_party/**/.dart_tool/
+third_party/**/build/
+
+# Printer/temp/generated files
+*.pdf
+*.csv
+*.sqlite
+*.db
+
+# Node (if used anywhere)
+node_modules/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# Crashlytics
+crashlytics-build.properties
+
+# Symbolication
+app.*.symbols
+
+# Obfuscation
+app.*.map.json

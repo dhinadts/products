@@ -78,6 +78,7 @@ class AppRouteNames {
   static const ledger = 'Ledger';
   static const balanceSheet = 'Balance Sheet';
   static const reports = 'Reports';
+  static const auditChecklist = 'Audit Checklist';
   static const settings = 'Settings';
   static const notifications = 'Notifications';
   static const help = 'Help';

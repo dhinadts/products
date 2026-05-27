@@ -32,6 +32,7 @@ class _HelpContent extends StatelessWidget {
         SizedBox(height: 24),
         _ResponsiveGrid(
           minTileWidth: 300,
+          tileHeight: 230,
           children: [
             _HelpCard(
               icon: Icons.menu_book_outlined,
@@ -205,11 +206,15 @@ class _ProfileContent extends StatelessWidget {
             _ResponsiveGrid(
               minTileWidth: 260,
               children: [
-                _MetricCard(
-                  label: 'OPEN APPROVALS',
-                  value: '0',
-                  color: _appAccent(context),
-                  note: 'No approvals yet',
+                Tooltip(
+                  message:
+                      'Open Approvals shows items waiting for approval. It helps you review pending work before it affects reports. New entries appear here when approvals are enabled.',
+                  child: _MetricCard(
+                    label: 'OPEN APPROVALS',
+                    value: '0',
+                    color: _appAccent(context),
+                    note: 'No approvals yet',
+                  ),
                 ),
                 _MetricCard(
                   label: 'LAST LOGIN',
@@ -217,17 +222,86 @@ class _ProfileContent extends StatelessWidget {
                   color: _green,
                   note: 'Session status',
                 ),
-                _MetricCard(
-                  label: 'AUDIT EVENTS',
-                  value: '0',
-                  color: _appAccent(context),
-                  note: 'No audit events yet',
+                Tooltip(
+                  message:
+                      'Audit Events shows important account and ledger changes. It helps trace who changed what and when. Events will list here as users work in the app.',
+                  child: _MetricCard(
+                    label: 'AUDIT EVENTS',
+                    value: '0',
+                    color: _appAccent(context),
+                    note: 'No audit events yet',
+                  ),
                 ),
               ],
+            ),
+            SizedBox(height: 24),
+            _Panel(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 640;
+                  final action = FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _appAccent(context),
+                    ),
+                    onPressed: () => context.go('/profile/bank-details'),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Manage Bank Accounts'),
+                  );
+                  final children = [
+                    Icon(
+                      Icons.account_balance_outlined,
+                      color: _appAccent(context),
+                      size: 32,
+                    ),
+                    SizedBox(width: compact ? 0 : 16, height: compact ? 12 : 0),
+                    compact
+                        ? _ProfileBankDetailsCopy()
+                        : Expanded(child: _ProfileBankDetailsCopy()),
+                    SizedBox(width: compact ? 0 : 16, height: compact ? 16 : 0),
+                    compact
+                        ? SizedBox(width: double.infinity, child: action)
+                        : action,
+                  ];
+
+                  return Flex(
+                    direction: compact ? Axis.vertical : Axis.horizontal,
+                    crossAxisAlignment: compact
+                        ? CrossAxisAlignment.start
+                        : CrossAxisAlignment.center,
+                    children: children,
+                  );
+                },
+              ),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _ProfileBankDetailsCopy extends StatelessWidget {
+  const _ProfileBankDetailsCopy();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Bank Details',
+          style: TextStyle(
+            color: _appAccent(context),
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        SizedBox(height: 6),
+        Text(
+          'Manage company, individual, joint, trust, and partnership accounts.',
+          style: TextStyle(color: _appMuted(context)),
+        ),
+      ],
     );
   }
 }
@@ -450,7 +524,12 @@ class _HelpCard extends StatelessWidget {
               style:
                   const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
-          Text(description, style: TextStyle(color: _appMuted(context))),
+          Text(
+            description,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: _appMuted(context)),
+          ),
         ],
       ),
     );
@@ -483,7 +562,7 @@ class _SupportPanel extends StatelessWidget {
                 width: compact ? constraints.maxWidth : null,
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(backgroundColor: _primary),
-                  onPressed: () {},
+                  onPressed: () => _showContactSupportDialog(context),
                   icon: const Icon(Icons.support_agent),
                   label: const Text('Contact Support'),
                 ),
@@ -492,7 +571,7 @@ class _SupportPanel extends StatelessWidget {
                 width: compact ? constraints.maxWidth : null,
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(foregroundColor: _primary),
-                  onPressed: () {},
+                  onPressed: () => context.go('/audit-checklist'),
                   icon: const Icon(Icons.checklist),
                   label: const Text('Audit Checklist'),
                 ),
@@ -500,6 +579,63 @@ class _SupportPanel extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+void _showContactSupportDialog(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Contact Support'),
+      content: const Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SupportDetail(label: 'Company name', value: 'Demo Ledger Support'),
+          _SupportDetail(
+            label: 'Address',
+            value: 'Demo Business Park, Chennai, Tamil Nadu',
+          ),
+          _SupportDetail(label: 'Phone number', value: '+91 90000 00000'),
+          _SupportDetail(label: 'Email', value: 'support@example.com'),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
+}
+
+class _SupportDetail extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _SupportDetail({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: _appMuted(context),
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+        ],
       ),
     );
   }

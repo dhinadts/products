@@ -1,17 +1,67 @@
-# balance_sheet_ledger
+4. DESIGN SPECIFICATIONS FOR DESIGNERS
+If you need to provide these to a designer, here are the specifications:
 
-A new Flutter project.
+Logo Specifications:
+Colors:
 
-## Getting Started
+Primary: #145A32 (Deep Forest Green)
 
-This project is a starting point for a Flutter application.
+Secondary: #F4C430 (Finance Gold)
 
-A few resources to get you started if this is your first Flutter project:
+Accent: #0B3D2E (Dark Emerald)
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Background: #0B100D (Near Black)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Splash Screen Images Required:
+Create 4 images for carousel (1080x1920 pixels each):
+
+asset_tracking.png
+
+Show dashboard with multiple wallets
+
+Cryptocurrency icons (Bitcoin, Ethereum)
+
+Rising graph lines
+
+Color theme: Green + Gold
+
+real_time.png
+
+Live transaction feed animation
+
+Real-time balance updates
+
+Mobile device mockup showing ledger entries
+
+Color theme: Gold accents
+
+secure.png
+
+Shield icon with lock
+
+Fingerprint/biometric icon
+
+Encryption symbols
+
+Color theme: Emerald green
+
+analytics.png
+
+Bar charts and pie charts
+
+Export/share functionality
+
+Report generation illustration
+
+Color theme: Gradient green-gold
+
+App Icon Specifications:
+Size: 1024x1024 pixels
+
+Background: Radial gradient from #0B3D2E to #145A32
+
+Center: Ledger book icon in gold
+
+Border: Thin gold stroke
+
+To use these in your app, create an assets/images/onboarding/ folder and add the PNG files. Update your pubspec.yaml:
